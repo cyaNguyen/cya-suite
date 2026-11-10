@@ -15,12 +15,13 @@ use axum::{
     Json, Router,
 };
 use chrono::Local;
-use search::{extract_text_from_docx, extract_text_from_pdf, search_documents, SearchResultItem};
+use search::{extract_text_from_docx, extract_text_from_pdf, get_scanned_files, search_documents, ScannedDoc, SearchResultItem};
 use serde::{Deserialize, Serialize};
-use state::AppState;
+use state::{AppState, IndexingStatus};
 use std::fs;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
@@ -29,21 +30,25 @@ use walkdir::WalkDir;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Khởi tạo thư mục dữ liệu
     let data_dir = PathBuf::from("cya_data");
     fs::create_dir_all(&data_dir)?;
     let temp_dir = data_dir.join("temp");
     fs::create_dir_all(&temp_dir)?;
 
-    // Khởi tạo SQLite
     let db_path = data_dir.join("cya_suite.db");
     let conn = db::init_db(&db_path)?;
     let shared_state = Arc::new(AppState::new(conn, data_dir));
 
     let app = Router::new()
         .route("/", get(index_handler))
+        // API Chọn thư mục
+        .route("/api/pick-folder", get(pick_folder_handler))
+        // API Lập chỉ mục có tiến trình & nút dừng
+        .route("/api/index/start", post(start_indexing_handler))
+        .route("/api/index/stop", post(stop_indexing_handler))
+        .route("/api/index/status", get(get_indexing_status_handler))
+        .route("/api/scanned-files", get(get_scanned_files_handler))
         // API Tìm kiếm
-        .route("/api/index", post(index_folder_handler))
         .route("/api/search", get(search_handler))
         .route("/api/open-file", get(open_file_handler))
         // API Lập danh mục
@@ -68,16 +73,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let url = format!("http://127.0.0.1:{}", port);
 
     println!("============================================================");
-    println!("  CYA SUITE - HỆ THỐNG VĂN PHÒNG & AI HIỆU NĂNG CAO (RUST)");
+    println!("  CYA SUITE - HỆ THỐNG VĂN PHÒNG & TỰ ĐỘNG HÓA AI (RUST)");
     println!("  Tác giả: Nguyễn Tiến Hùng (cyaNguyen)");
-    println!("  Facebook: https://www.facebook.com/nguyen.tien.hung.409785/");
-    println!("  Telegram: @cyanguyen | GitHub: https://github.com/cyaNguyen");
-    println!("  Bản quyền: VĨNH VIỄN (Không giới hạn thời gian)");
     println!("============================================================");
     println!("  -> Máy chủ đang chạy tại: {}", url);
     println!("  -> Đang tự động mở trình duyệt...");
 
-    // Tự động mở trình duyệt
     let _ = webbrowser::open(&url);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -90,110 +91,221 @@ async fn index_handler() -> Html<&'static str> {
     Html(ui::INDEX_HTML)
 }
 
+/// Mở hộp thoại chọn thư mục chuẩn Windows
+async fn pick_folder_handler() -> Json<Option<String>> {
+    let folder = tokio::task::spawn_blocking(|| {
+        rfd::FileDialog::new()
+            .set_title("Chọn thư mục chứa tài liệu PDF và Word")
+            .pick_folder()
+    })
+    .await
+    .unwrap_or(None);
+
+    Json(folder.map(|p| p.to_string_lossy().to_string()))
+}
+
 #[derive(Deserialize)]
 struct IndexFolderReq {
     folder: String,
 }
 
 #[derive(Serialize)]
-struct IndexFolderRes {
+struct GenericRes {
     success: bool,
-    indexed_files: usize,
     message: String,
 }
 
-async fn index_folder_handler(
+/// Bắt đầu quét thư mục chạy nền bất đồng bộ
+async fn start_indexing_handler(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<IndexFolderReq>,
-) -> Json<IndexFolderRes> {
+) -> Json<GenericRes> {
     let folder = payload.folder.trim().to_string();
     let folder_path = PathBuf::from(&folder);
 
     if !folder_path.exists() || !folder_path.is_dir() {
-        return Json(IndexFolderRes {
+        return Json(GenericRes {
             success: false,
-            indexed_files: 0,
             message: "Thư mục không tồn tại hoặc không hợp lệ!".into(),
         });
     }
 
-    let db_arc = state.db.clone();
-    let mut count = 0;
-    let now_str = Local::now().format("%d/%m/%Y %H:%M:%S").to_string();
+    {
+        let mut status = state.indexing_status.lock().unwrap();
+        if status.is_running {
+            return Json(GenericRes {
+                success: false,
+                message: "Hệ thống đang trong quá trình quét!".into(),
+            });
+        }
+        status.is_running = true;
+        status.stopped = false;
+        status.percent = 0;
+        status.scanned_count = 0;
+        status.total_files = 0;
+        status.message = "Đang thu thập danh sách file...".into();
+    }
+    state.stop_flag.store(false, Ordering::SeqCst);
 
-    // Thu thập file PDF & DOCX
-    let mut files = Vec::new();
-    for entry in WalkDir::new(&folder_path).into_iter().filter_map(|e| e.ok()) {
-        let p = entry.path();
-        if p.is_file() {
-            if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
-                let ext_lower = ext.to_lowercase();
-                if ext_lower == "pdf" || ext_lower == "docx" {
-                    files.push((p.to_path_buf(), ext_lower));
+    let state_clone = state.clone();
+    tokio::spawn(async move {
+        let stop_flag = state_clone.stop_flag.clone();
+        let status_arc = state_clone.indexing_status.clone();
+        let db_arc = state_clone.db.clone();
+
+        // 1. Quét tìm tất cả các file PDF & DOCX
+        let mut files = Vec::new();
+        for entry in WalkDir::new(&folder_path).into_iter().filter_map(|e| e.ok()) {
+            if stop_flag.load(Ordering::SeqCst) {
+                break;
+            }
+            let p = entry.path();
+            if p.is_file() {
+                if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
+                    let ext_lower = ext.to_lowercase();
+                    if ext_lower == "pdf" || ext_lower == "docx" {
+                        files.push((p.to_path_buf(), ext_lower));
+                    }
                 }
             }
         }
-    }
 
-    // Quét và nạp dữ liệu
-    for (file_p, ext) in files {
-        let file_name = file_p.file_name().unwrap_or_default().to_string_lossy().to_string();
-        let file_path_str = file_p.to_string_lossy().to_string();
+        let total = files.len();
+        {
+            let mut status = status_arc.lock().unwrap();
+            status.total_files = total;
+            status.message = format!("Tìm thấy {} file tài liệu. Đang lập chỉ mục...", total);
+        }
 
-        if ext == "docx" {
-            if let Ok(text) = extract_text_from_docx(&file_p) {
-                if !text.trim().is_empty() {
-                    let text_no_acc = remove_accents(&text);
+        if total == 0 {
+            let mut status = status_arc.lock().unwrap();
+            status.is_running = false;
+            status.message = "Không tìm thấy file PDF hoặc Word nào trong thư mục!".into();
+            return;
+        }
+
+        let now_str = Local::now().format("%d/%m/%Y %H:%M:%S").to_string();
+        let mut processed = 0;
+
+        for (file_p, ext) in files {
+            if stop_flag.load(Ordering::SeqCst) {
+                let mut status = status_arc.lock().unwrap();
+                status.is_running = false;
+                status.stopped = true;
+                status.message = format!("Đã dừng quét! Đã lập chỉ mục {} file.", processed);
+                return;
+            }
+
+            let file_name = file_p.file_name().unwrap_or_default().to_string_lossy().to_string();
+            let file_path_str = file_p.to_string_lossy().to_string();
+
+            {
+                let mut status = status_arc.lock().unwrap();
+                status.current_file = file_name.clone();
+                status.scanned_count = processed;
+                status.percent = ((processed as f64 / total as f64) * 100.0) as usize;
+                status.message = format!("Đang đọc file {}/{}: {}", processed + 1, total, file_name);
+            }
+
+            if ext == "docx" {
+                if let Ok(text) = extract_text_from_docx(&file_p) {
+                    if !text.trim().is_empty() {
+                        let text_no_acc = remove_accents(&text);
+                        let conn = db_arc.lock().unwrap();
+                        let _ = conn.execute(
+                            "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                            rusqlite::params![file_path_str, file_name, "WORD", 1, text, text_no_acc, now_str],
+                        );
+                        let _ = conn.execute(
+                            "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                            rusqlite::params![file_path_str, file_name, "WORD", 1, text, text_no_acc],
+                        );
+                    }
+                }
+            } else if ext == "pdf" {
+                if let Ok(pages) = extract_text_from_pdf(&file_p) {
                     let conn = db_arc.lock().unwrap();
-                    let _ = conn.execute(
-                        "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                        rusqlite::params![file_path_str, file_name, "WORD", 1, text, text_no_acc, now_str],
-                    );
-                    let _ = conn.execute(
-                        "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                        rusqlite::params![file_path_str, file_name, "WORD", 1, text, text_no_acc],
-                    );
-                    count += 1;
+                    for (page_no, text) in pages {
+                        let text_no_acc = remove_accents(&text);
+                        let _ = conn.execute(
+                            "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                            rusqlite::params![file_path_str, file_name, "PDF", page_no, text, text_no_acc, now_str],
+                        );
+                        let _ = conn.execute(
+                            "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                            rusqlite::params![file_path_str, file_name, "PDF", page_no, text, text_no_acc],
+                        );
+                    }
                 }
             }
-        } else if ext == "pdf" {
-            if let Ok(pages) = extract_text_from_pdf(&file_p) {
-                let conn = db_arc.lock().unwrap();
-                for (page_no, text) in pages {
-                    let text_no_acc = remove_accents(&text);
-                    let _ = conn.execute(
-                        "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                        rusqlite::params![file_path_str, file_name, "PDF", page_no, text, text_no_acc, now_str],
-                    );
-                    let _ = conn.execute(
-                        "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                        rusqlite::params![file_path_str, file_name, "PDF", page_no, text, text_no_acc],
-                    );
-                }
-                count += 1;
-            }
-        }
-    }
 
-    Json(IndexFolderRes {
+            processed += 1;
+        }
+
+        let mut status = status_arc.lock().unwrap();
+        status.is_running = false;
+        status.percent = 100;
+        status.scanned_count = processed;
+        status.message = format!("Hoàn thành! Đã quét và lập chỉ mục thành công {} file.", processed);
+    });
+
+    Json(GenericRes {
         success: true,
-        indexed_files: count,
-        message: format!("Đã quét và lập chỉ mục thành công {} file tài liệu!", count),
+        message: "Đã bắt đầu tiến trình quét dữ liệu...".into(),
     })
+}
+
+/// Dừng quá trình quét
+async fn stop_indexing_handler(State(state): State<Arc<AppState>>) -> Json<GenericRes> {
+    state.stop_flag.store(true, Ordering::SeqCst);
+    let mut status = state.indexing_status.lock().unwrap();
+    status.is_running = false;
+    status.stopped = true;
+    status.message = "Đang dừng tiến trình...".into();
+
+    Json(GenericRes {
+        success: true,
+        message: "Đã gửi lệnh dừng quét.".into(),
+    })
+}
+
+/// Lấy tiến độ quét hiện tại
+async fn get_indexing_status_handler(State(state): State<Arc<AppState>>) -> Json<IndexingStatus> {
+    let status = state.indexing_status.lock().unwrap().clone();
+    Json(status)
+}
+
+#[derive(Deserialize)]
+struct FilterReq {
+    file_type: Option<String>,
+}
+
+/// Lấy danh sách toàn bộ các file đã được quét trong database
+async fn get_scanned_files_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<FilterReq>,
+) -> Json<Vec<ScannedDoc>> {
+    let file_type = params.file_type.unwrap_or_else(|| "ALL".into());
+    let conn = state.db.lock().unwrap();
+    let docs = get_scanned_files(&conn, &file_type).unwrap_or_default();
+    Json(docs)
 }
 
 #[derive(Deserialize)]
 struct SearchReq {
     q: Option<String>,
+    file_type: Option<String>,
 }
 
+/// Tìm kiếm toàn văn tức thời theo từng ký tự (Live Search)
 async fn search_handler(
     State(state): State<Arc<AppState>>,
     Query(params): Query<SearchReq>,
 ) -> Json<Vec<SearchResultItem>> {
     let q = params.q.unwrap_or_default();
+    let file_type = params.file_type.unwrap_or_else(|| "ALL".into());
     let conn = state.db.lock().unwrap();
-    let results = search_documents(&conn, &q).unwrap_or_default();
+    let results = search_documents(&conn, &q, &file_type).unwrap_or_default();
     Json(results)
 }
 

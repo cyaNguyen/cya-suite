@@ -18,15 +18,13 @@ pub struct SearchResultItem {
     pub indexed_at: String,
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct IndexProgress {
-    pub is_running: bool,
-    pub current_file: String,
-    pub processed_files: usize,
-    pub total_files: usize,
-    pub percent: usize,
-    pub message: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScannedDoc {
+    pub file_name: String,
+    pub file_path: String,
+    pub file_type: String,
+    pub total_pages: i32,
+    pub indexed_at: String,
 }
 
 /// Trích xuất nội dung văn bản từ file Word (.docx) siêu tốc mà không cần MS Word
@@ -96,6 +94,10 @@ pub fn extract_text_from_pdf<P: AsRef<Path>>(path: P) -> Result<Vec<(i32, String
 
 /// Tạo trích đoạn (snippet) quanh từ khóa tìm kiếm
 fn create_snippet(content: &str, keyword: &str) -> String {
+    if keyword.is_empty() {
+        return content.chars().take(120).collect::<String>().replace('\n', " ") + "...";
+    }
+
     let lower_content = content.to_lowercase();
     let lower_keyword = keyword.to_lowercase();
 
@@ -110,13 +112,9 @@ fn create_snippet(content: &str, keyword: &str) -> String {
     }
 }
 
-/// Tìm kiếm toàn văn trong SQLite (dùng kết hợp FTS5 và không dấu)
-pub fn search_documents(conn: &Connection, query: &str) -> rusqlite::Result<Vec<SearchResultItem>> {
+/// Tìm kiếm văn bản trong SQLite (hỗ trợ lọc loại file và tìm kiếm theo thời gian thực)
+pub fn search_documents(conn: &Connection, query: &str, file_type: &str) -> rusqlite::Result<Vec<SearchResultItem>> {
     let query_clean = query.trim();
-    if query_clean.is_empty() {
-        return Ok(Vec::new());
-    }
-
     let query_no_accent = remove_accents(query_clean);
     let like_pattern = format!("%{}%", query_clean);
     let like_no_accent = format!("%{}%", query_no_accent);
@@ -125,13 +123,14 @@ pub fn search_documents(conn: &Connection, query: &str) -> rusqlite::Result<Vec<
         "
         SELECT id, file_name, file_path, file_type, page_number, content, indexed_at
         FROM documents
-        WHERE content LIKE ?1 OR content_no_accent LIKE ?2 OR file_name LIKE ?1
+        WHERE (?1 = 'ALL' OR file_type = ?1)
+          AND (?2 = '' OR content LIKE ?3 OR content_no_accent LIKE ?4 OR file_name LIKE ?3)
         ORDER BY file_name ASC, page_number ASC
-        LIMIT 500
+        LIMIT 300
         ",
     )?;
 
-    let rows = stmt.query_map(params![like_pattern, like_no_accent], |row| {
+    let rows = stmt.query_map(params![file_type, query_clean, like_pattern, like_no_accent], |row| {
         let content: String = row.get(5)?;
         let snippet = create_snippet(&content, query_clean);
         Ok(SearchResultItem {
@@ -142,6 +141,37 @@ pub fn search_documents(conn: &Connection, query: &str) -> rusqlite::Result<Vec<
             page_number: row.get(4)?,
             snippet,
             indexed_at: row.get(6)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for r in rows {
+        results.push(r?);
+    }
+
+    Ok(results)
+}
+
+/// Lấy danh sách tài liệu đã lập chỉ mục trong hệ thống
+pub fn get_scanned_files(conn: &Connection, file_type: &str) -> rusqlite::Result<Vec<ScannedDoc>> {
+    let mut stmt = conn.prepare(
+        "
+        SELECT file_name, file_path, file_type, COUNT(DISTINCT page_number) as total_pages, MAX(indexed_at) as indexed_at
+        FROM documents
+        WHERE (?1 = 'ALL' OR file_type = ?1)
+        GROUP BY file_name, file_path, file_type
+        ORDER BY MAX(id) DESC
+        LIMIT 500
+        ",
+    )?;
+
+    let rows = stmt.query_map(params![file_type], |row| {
+        Ok(ScannedDoc {
+            file_name: row.get(0)?,
+            file_path: row.get(1)?,
+            file_type: row.get(2)?,
+            total_pages: row.get(3)?,
+            indexed_at: row.get(4)?,
         })
     })?;
 

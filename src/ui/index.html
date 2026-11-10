@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CYA Suite - Bộ công cụ Văn phòng & AI Siêu tốc</title>
+  <title>CYA Suite - Bộ công cụ Văn phòng & AI</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -12,6 +12,7 @@
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     .nav-btn.active { background-color: #2563eb; color: #ffffff; }
+    .filter-btn.active { background-color: #2563eb; color: #ffffff; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased flex h-screen overflow-hidden">
@@ -27,7 +28,7 @@
           </div>
           <div>
             <h1 class="font-bold text-white tracking-wide text-lg">CYA SUITE</h1>
-            <p class="text-xs text-blue-400 font-medium">Rust High Performance</p>
+            <p class="text-xs text-slate-400 font-medium">Hệ thống Văn phòng & AI</p>
           </div>
         </div>
       </div>
@@ -57,12 +58,8 @@
     </div>
 
     <!-- Author & Owner Info -->
-    <div class="p-4 border-t border-slate-800 bg-slate-950/50">
-      <div class="text-xs space-y-2">
-        <div class="flex items-center space-x-2 text-emerald-400 font-semibold">
-          <i class="fa-solid fa-circle-check"></i>
-          <span>Bản quyền Vĩnh viễn (Đã mở khóa)</span>
-        </div>
+    <div class="p-4 border-t border-slate-800 bg-slate-950/40">
+      <div class="text-xs space-y-1.5">
         <p class="text-slate-400 font-medium">Tác giả: <span class="text-white font-semibold">Nguyễn Tiến Hùng</span></p>
         <div class="flex space-x-3 pt-1 text-slate-400">
           <a href="https://www.facebook.com/nguyen.tien.hung.409785/" target="_blank" class="hover:text-blue-400 text-sm" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
@@ -78,13 +75,7 @@
     
     <!-- Top Header Bar -->
     <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
-      <div class="flex items-center space-x-4">
-        <h2 id="top-title" class="text-xl font-bold text-slate-800">Tìm kiếm tài liệu siêu tốc (PDF & Word)</h2>
-        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Native Rust Engine</span>
-      </div>
-      <div class="text-xs text-slate-500">
-        Phiên bản 1.0.0 • Siêu nhẹ • Tốc độ cao
-      </div>
+      <h2 id="top-title" class="text-xl font-bold text-slate-800">Tìm kiếm tài liệu siêu tốc (PDF & Word)</h2>
     </header>
 
     <!-- TAB 1: TÌM KIẾM TÀI LIỆU -->
@@ -94,28 +85,63 @@
         <!-- Quét thư mục -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">1. Thư mục dữ liệu</h3>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <input type="text" id="folder-path" placeholder="Nhập đường dẫn thư mục chứa PDF và Word (VD: D:\Tài liệu hoặc E:\Documents)..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
-            <button onclick="startIndexing()" id="btn-index" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-2">
-              <i class="fa-solid fa-rotate"></i>
-              <span>Quét & Lập chỉ mục</span>
-            </button>
+          
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <div class="flex-1 flex gap-2">
+              <input type="text" id="folder-path" placeholder="Nhập đường dẫn thư mục hoặc bấm Chọn thư mục..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+              <button onclick="pickFolder()" title="Mở cửa sổ chọn thư mục trên máy tính" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition flex items-center space-x-1.5 flex-shrink-0">
+                <i class="fa-regular fa-folder-open text-blue-600"></i>
+                <span>Chọn thư mục</span>
+              </button>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="startIndexing()" id="btn-index" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-play"></i>
+                <span>Quét dữ liệu</span>
+              </button>
+              <button onclick="stopIndexing()" id="btn-stop" class="hidden px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-1.5">
+                <i class="fa-solid fa-stop"></i>
+                <span>Dừng quét</span>
+              </button>
+            </div>
           </div>
-          <div id="index-status" class="mt-3 text-xs text-slate-500">Chưa quét. Sẵn sàng lập chỉ mục siêu tốc FTS5.</div>
+
+          <!-- Thanh tiến trình trực quan -->
+          <div id="progress-box" class="hidden mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-700">
+              <span id="progress-title">Đang quét tài liệu...</span>
+              <span id="progress-percent" class="text-blue-600 font-bold">0%</span>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+              <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-200" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-500">
+              <span id="progress-file" class="truncate font-mono max-w-lg"></span>
+              <span id="progress-counter" class="flex-shrink-0 ml-2 font-medium"></span>
+            </div>
+          </div>
+          
+          <div id="index-status" class="mt-3 text-xs text-slate-500">Sẵn sàng lập chỉ mục siêu tốc FTS5.</div>
         </div>
 
-        <!-- Tìm kiếm -->
+        <!-- Tìm kiếm nội dung trực tiếp (Typing đến đâu khớp đến đó) -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">2. Tìm kiếm nội dung</h3>
-          <div class="flex gap-3">
-            <input type="text" id="search-query" onkeydown="if(event.key==='Enter') doSearch()" placeholder="Nhập từ khóa tìm kiếm (có dấu hoặc không dấu)..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
-            <button onclick="doSearch()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center space-x-2">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <span>Tìm kiếm</span>
-            </button>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">2. Tìm kiếm nội dung</h3>
+            <!-- Bộ lọc định dạng file -->
+            <div class="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl">
+              <button onclick="setFilter('ALL')" id="filter-all" class="filter-btn active px-3 py-1 rounded-lg text-xs font-medium transition">Tất cả</button>
+              <button onclick="setFilter('PDF')" id="filter-pdf" class="filter-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition">📄 PDF</button>
+              <button onclick="setFilter('WORD')" id="filter-word" class="filter-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition">📝 Word (.docx)</button>
+            </div>
           </div>
 
-          <!-- Bảng kết quả -->
+          <div class="relative">
+            <input type="text" id="search-query" oninput="onSearchInput()" placeholder="Nhập từ khóa tìm kiếm (gõ đến đâu tự động hiển thị kết quả đến đó)..." class="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+          </div>
+
+          <!-- Bảng kết quả tìm kiếm -->
           <div class="mt-6">
             <div class="flex items-center justify-between mb-3">
               <span id="search-summary" class="text-xs text-slate-500 font-medium">Chưa có kết quả tìm kiếm</span>
@@ -133,11 +159,44 @@
                 </thead>
                 <tbody id="search-results-body" class="divide-y divide-slate-100">
                   <tr>
-                    <td colspan="5" class="p-8 text-center text-slate-400">Nhập từ khóa và bấm Tìm kiếm để tra cứu</td>
+                    <td colspan="5" class="p-8 text-center text-slate-400">Nhập từ khóa để tra cứu trực tiếp theo thời gian thực</td>
                   </tr>
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <!-- Bảng danh sách các file đã quét trong hệ thống -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-database text-blue-600"></i>
+              <h3 class="text-sm font-semibold text-slate-800">Danh sách tài liệu đã lập chỉ mục trong hệ thống (<span id="scanned-count-badge">0</span> file)</h3>
+            </div>
+            <button onclick="loadScannedFiles()" class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Làm mới</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3 w-1/3">Tên tài liệu</th>
+                  <th class="p-3 w-24 text-center">Loại</th>
+                  <th class="p-3 w-24 text-center">Số trang</th>
+                  <th class="p-3">Đường dẫn đầy đủ</th>
+                  <th class="p-3 w-24 text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="scanned-files-body" class="divide-y divide-slate-100">
+                <tr>
+                  <td colspan="5" class="p-8 text-center text-slate-400">Chưa có tài liệu nào. Vui lòng quét thư mục ở mục trên.</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -320,6 +379,11 @@
   </main>
 
   <script>
+    let currentFilter = 'ALL';
+    let progressTimer = null;
+    let searchDebounce = null;
+
+    // Chuyển tab
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -335,46 +399,121 @@
       };
       document.getElementById('top-title').innerText = titles[tabId];
 
+      if (tabId === 'search') loadScannedFiles();
       if (tabId === 'catalog' && catalogRows.length === 0) loadInitialCatalog();
       if (tabId === 'kpi') loadKpiData();
     }
 
+    // TAB 1: CHỌN THƯ MỤC NATIVE WINDOWS
+    async function pickFolder() {
+      try {
+        const res = await fetch('/api/pick-folder');
+        const selected = await res.json();
+        if (selected) {
+          document.getElementById('folder-path').value = selected;
+        }
+      } catch (err) {
+        console.error('Lỗi chọn thư mục:', err);
+      }
+    }
+
+    // BẮT ĐẦU QUÉT
     async function startIndexing() {
       const folder = document.getElementById('folder-path').value.trim();
-      if (!folder) { alert('Vui lòng nhập đường dẫn thư mục!'); return; }
-      
-      const btn = document.getElementById('btn-index');
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang quét...</span>';
-      document.getElementById('index-status').innerText = 'Đang quét thư mục và lập chỉ mục FTS5...';
+      if (!folder) { alert('Vui lòng chọn hoặc nhập đường dẫn thư mục!'); return; }
+
+      document.getElementById('btn-index').classList.add('hidden');
+      document.getElementById('btn-stop').classList.remove('hidden');
+      document.getElementById('progress-box').classList.remove('hidden');
 
       try {
-        const res = await fetch('/api/index', {
+        const res = await fetch('/api/index/start', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ folder })
         });
         const data = await res.json();
-        document.getElementById('index-status').innerText = data.message;
+        if (!data.success) {
+          alert(data.message);
+          resetIndexingUI();
+          return;
+        }
+        pollProgress();
       } catch (err) {
-        document.getElementById('index-status').innerText = 'Lỗi: ' + err;
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Quét & Lập chỉ mục</span>';
+        alert('Lỗi bắt đầu quét: ' + err);
+        resetIndexingUI();
       }
+    }
+
+    // DỪNG QUÉT
+    async function stopIndexing() {
+      await fetch('/api/index/stop', { method: 'POST' });
+    }
+
+    // THEO DÕI TIẾN TRÌNH QUÉT
+    function pollProgress() {
+      if (progressTimer) clearInterval(progressTimer);
+      progressTimer = setInterval(async () => {
+        try {
+          const res = await fetch('/api/index/status');
+          const st = await res.json();
+
+          document.getElementById('progress-bar').style.width = st.percent + '%';
+          document.getElementById('progress-percent').innerText = st.percent + '%';
+          document.getElementById('progress-title').innerText = st.message;
+          document.getElementById('progress-file').innerText = st.current_file ? 'Tập tin: ' + st.current_file : '';
+          document.getElementById('progress-counter').innerText = st.total_files > 0 ? `${st.scanned_count}/${st.total_files} file` : '';
+          document.getElementById('index-status').innerText = st.message;
+
+          if (!st.is_running) {
+            clearInterval(progressTimer);
+            resetIndexingUI();
+            loadScannedFiles();
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }, 300);
+    }
+
+    function resetIndexingUI() {
+      document.getElementById('btn-index').classList.remove('hidden');
+      document.getElementById('btn-stop').classList.add('hidden');
+    }
+
+    // BỘ LỌC ĐỊNH DẠNG FILE
+    function setFilter(type) {
+      currentFilter = type;
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'bg-blue-600', 'text-white'));
+      const activeBtn = document.getElementById('filter-' + type.toLowerCase());
+      if (activeBtn) activeBtn.classList.add('active', 'bg-blue-600', 'text-white');
+      
+      doSearch();
+      loadScannedFiles();
+    }
+
+    // TÌM KIẾM THEO THỜI GIAN THỰC (TYPING ĐẾN ĐÂU TỰ TÌM ĐẾN ĐÓ)
+    function onSearchInput() {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        doSearch();
+      }, 120);
     }
 
     async function doSearch() {
       const q = document.getElementById('search-query').value.trim();
-      if (!q) return;
-
       const tbody = document.getElementById('search-results-body');
-      tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm kiếm...</td></tr>';
+
+      if (!q) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">Nhập từ khóa để tra cứu trực tiếp theo thời gian thực</td></tr>';
+        document.getElementById('search-summary').innerText = 'Chưa có kết quả tìm kiếm';
+        return;
+      }
 
       try {
-        const res = await fetch('/api/search?q=' + encodeURIComponent(q));
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&file_type=${currentFilter}`);
         const items = await res.json();
-        document.getElementById('search-summary').innerText = `Tìm thấy ${items.length} kết quả phù hợp`;
+        document.getElementById('search-summary').innerText = `Tìm thấy ${items.length} kết quả phù hợp (${currentFilter === 'ALL' ? 'Tất cả' : currentFilter})`;
 
         if (items.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">Không tìm thấy tài liệu phù hợp từ khóa</td></tr>';
@@ -385,7 +524,7 @@
           <tr class="hover:bg-slate-50/80 transition">
             <td class="p-3 font-medium text-slate-800 break-all">${item.file_name}</td>
             <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-xs font-semibold ${item.file_type === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${item.file_type}</span></td>
-            <td class="p-3 text-center text-slate-500">${item.page_number}</td>
+            <td class="p-3 text-center text-slate-500 font-medium">${item.page_number}</td>
             <td class="p-3 text-slate-600 text-xs leading-relaxed">${item.snippet}</td>
             <td class="p-3 text-center">
               <button onclick="openFile('${encodeURIComponent(item.file_path)}')" class="px-3 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
@@ -397,10 +536,43 @@
       }
     }
 
+    // TẢI DANH SÁCH TOÀN BỘ CÁC FILE ĐÃ QUÉT
+    async function loadScannedFiles() {
+      try {
+        const res = await fetch(`/api/scanned-files?file_type=${currentFilter}`);
+        const docs = await res.json();
+        document.getElementById('scanned-count-badge').innerText = docs.length;
+
+        const tbody = document.getElementById('scanned-files-body');
+        if (docs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">Chưa có tài liệu nào phù hợp. Vui lòng chọn thư mục và bấm Quét dữ liệu.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = docs.map(d => `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="p-3 font-semibold text-slate-800 break-all flex items-center space-x-2">
+              <i class="${d.file_type === 'PDF' ? 'fa-solid fa-file-pdf text-red-500' : 'fa-solid fa-file-word text-blue-500'}"></i>
+              <span>${d.file_name}</span>
+            </td>
+            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-xs font-semibold ${d.file_type === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${d.file_type}</span></td>
+            <td class="p-3 text-center font-medium text-slate-600">${d.total_pages}</td>
+            <td class="p-3 text-slate-500 text-xs truncate max-w-xs font-mono" title="${d.file_path}">${d.file_path}</td>
+            <td class="p-3 text-center">
+              <button onclick="openFile('${encodeURIComponent(d.file_path)}')" class="px-3 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     async function openFile(encodedPath) {
       await fetch('/api/open-file?path=' + encodedPath);
     }
 
+    // TAB 2: CATALOG
     let catalogRows = [
       { stt: 1, so_ky_hieu: '12/KH-CAT', ngay_ban_hanh: '10/01/2026', co_quan_ban_hanh: 'Công an tỉnh', trich_yeu: 'Kế hoạch công tác thanh tra, kiểm tra năm 2026', to_so: '01-05', do_mat: 'Thường', ghi_chu: 'Bản chính' },
       { stt: 2, so_ky_hieu: '05/QĐ-CAT', ngay_ban_hanh: '15/02/2026', co_quan_ban_hanh: 'Công an tỉnh', trich_yeu: 'Quyết định thành lập Đoàn thanh tra hành chính', to_so: '06-08', do_mat: 'Thường', ghi_chu: '' }
@@ -450,7 +622,7 @@
       const res = await fetch('/api/catalog/export', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ rows: catalogRows, title: 'HỒ SƠ THANH TRA NĂM 2026' })
+        body: JSON.stringify({ rows: catalogRows, title: 'HỒ SƠ LƯU TRỮ' })
       });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -460,6 +632,7 @@
       a.click();
     }
 
+    // TAB 3: VOICE
     async function generateVoice() {
       const text = document.getElementById('tts-text').value.trim();
       if (!text) { alert('Vui lòng nhập văn bản cần đọc!'); return; }
@@ -497,6 +670,7 @@
       }
     }
 
+    // TAB 4: KPI
     async function loadKpiData() {
       const month = document.getElementById('kpi-month').value;
       const year = document.getElementById('kpi-year').value;
@@ -555,6 +729,9 @@
         })
       }).then(() => loadKpiData());
     }
+
+    // Tự động tải danh sách file đã quét ban đầu khi mở app
+    loadScannedFiles();
   </script>
 </body>
 </html>
