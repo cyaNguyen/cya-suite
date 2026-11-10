@@ -34,9 +34,13 @@
 CYA SUITE tích hợp giao diện hiện đại, tối giản và thanh lịch, bao gồm 4 phân hệ cốt lõi:
 
 ### 🔍 1. Tìm kiếm tài liệu siêu tốc (PDF & Word Full-Text Search)
-* **Lập chỉ mục thông minh:** Tự động phân loại tài liệu PDF và Word `.docx`. Đối với PDF điện tử, trích xuất text trực tiếp trong vài mili-giây mà không cần tốn tài nguyên chạy OCR.
-* **Bộ máy tìm kiếm FTS5:** Tích hợp bộ tìm kiếm toàn văn Full-Text Search (Unicode61) của SQLite kết hợp thuật toán chuẩn hóa tiếng Việt không dấu.
-* **Tra cứu tức thì:** Tìm kiếm theo từ khóa có dấu hoặc không dấu, hiển thị đoạn trích dẫn (snippet) nổi bật và cho phép mở file gốc trực tiếp bằng một cú nhấp chuột.
+* **Chọn thư mục tiện lợi:** Tích hợp nút **"Chọn thư mục"** mở trực tiếp hộp thoại chọn thư mục gốc của Windows (Native File Dialog).
+* **Quét đa luồng & Thanh tiến trình trực quan:** Quét nền bất đồng bộ, thanh tiến trình hiển thị % hoàn thành, số lượng file đã xử lý, tên file đang đọc theo thời gian thực, có nút **"Dừng quét"** khi muốn hủy.
+* **Lập chỉ mục thông minh:** Phân loại và trích xuất nội dung văn bản siêu tốc từ tài liệu PDF và Word `.docx`.
+* **Bộ máy tìm kiếm FTS5:** Bộ tìm kiếm toàn văn Full-Text Search (Unicode61) của SQLite kết hợp chuẩn hóa tiếng Việt không dấu.
+* **Tra cứu tức thì (Live Search):** Gõ phím đến đâu kết quả tìm kiếm tự động hiển thị tức thì đến đó (debounce 120ms).
+* **Bộ lọc định dạng file:** Lọc nhanh kết quả theo `Tất cả`, `📄 PDF` hoặc `📝 Word (.docx)`.
+* **Danh sách tài liệu đã lập chỉ mục:** Hiển thị toàn bộ danh sách các file đã nạp vào cơ sở dữ liệu kèm số trang và nút mở file gốc trực tiếp bằng một cú nhấp chuột.
 
 ### 📑 2. Lập danh mục hồ sơ lưu trữ (Mẫu số 03)
 * **Trích xuất tự động thông tin hành chính:** Tự động phân tích trang đầu văn bản để nhận diện:
