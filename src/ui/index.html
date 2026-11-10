@@ -84,50 +84,64 @@
         
         <!-- Quét thư mục -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">1. Thư mục dữ liệu</h3>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wider">1. Chọn vị trí quét dữ liệu</h3>
+            <span class="text-xs text-slate-400">Hỗ trợ toàn bộ máy tính hoặc thư mục riêng</span>
+          </div>
           
           <div class="flex flex-col sm:flex-row gap-2.5">
             <div class="flex-1 flex gap-2">
-              <input type="text" id="folder-path" placeholder="Nhập đường dẫn thư mục hoặc bấm Chọn thư mục..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
-              <button onclick="pickFolder()" title="Mở cửa sổ chọn thư mục trên máy tính" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition flex items-center space-x-1.5 flex-shrink-0">
+              <input type="text" id="folder-path" placeholder="Chọn nhanh ổ đĩa bên dưới hoặc bấm Duyệt thư mục..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono text-slate-700">
+              <button onclick="pickFolder()" id="btn-pick-folder" title="Mở hộp thoại chọn thư mục chuẩn Windows" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition flex items-center space-x-1.5 flex-shrink-0">
                 <i class="fa-regular fa-folder-open text-blue-600"></i>
-                <span>Chọn thư mục</span>
+                <span>Duyệt thư mục...</span>
               </button>
             </div>
             <div class="flex gap-2">
-              <button onclick="startIndexing()" id="btn-index" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-2">
+              <button onclick="startIndexing()" id="btn-index" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-2 flex-shrink-0">
                 <i class="fa-solid fa-play"></i>
-                <span>Quét dữ liệu</span>
+                <span>Bắt đầu quét</span>
               </button>
-              <button onclick="stopIndexing()" id="btn-stop" class="hidden px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-1.5">
+              <button onclick="stopIndexing()" id="btn-stop" class="hidden px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-1.5 flex-shrink-0">
                 <i class="fa-solid fa-stop"></i>
                 <span>Dừng quét</span>
               </button>
             </div>
           </div>
 
+          <!-- Các nút chọn nhanh ổ đĩa & thư mục máy tính -->
+          <div class="mt-3 flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-semibold text-slate-400 mr-1"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>Chọn nhanh:</span>
+            <div id="quick-drives" class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs text-slate-400">Đang nhận diện ổ đĩa...</span>
+            </div>
+          </div>
+
           <!-- Thanh tiến trình trực quan -->
           <div id="progress-box" class="hidden mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
             <div class="flex items-center justify-between text-xs font-semibold text-slate-700">
-              <span id="progress-title">Đang quét tài liệu...</span>
-              <span id="progress-percent" class="text-blue-600 font-bold">0%</span>
+              <span id="progress-title" class="flex items-center space-x-2">
+                <i class="fa-solid fa-spinner fa-spin text-blue-600"></i>
+                <span>Đang quét tài liệu...</span>
+              </span>
+              <span id="progress-counter" class="text-blue-600 font-bold">0 tài liệu</span>
             </div>
             <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-              <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-200" style="width: 0%"></div>
+              <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-200 animate-pulse" style="width: 35%"></div>
             </div>
             <div class="flex justify-between items-center text-xs text-slate-500">
-              <span id="progress-file" class="truncate font-mono max-w-lg"></span>
-              <span id="progress-counter" class="flex-shrink-0 ml-2 font-medium"></span>
+              <span id="progress-file" class="truncate font-mono max-w-xl text-slate-600"></span>
+              <span id="progress-percent" class="flex-shrink-0 ml-2 font-medium text-slate-400"></span>
             </div>
           </div>
           
-          <div id="index-status" class="mt-3 text-xs text-slate-500">Sẵn sàng lập chỉ mục siêu tốc FTS5.</div>
+          <div id="index-status" class="mt-3 text-xs text-slate-500">Sẵn sàng quét và lập chỉ mục nội dung siêu tốc.</div>
         </div>
 
         <!-- Tìm kiếm nội dung trực tiếp (Typing đến đâu khớp đến đó) -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">2. Tìm kiếm nội dung</h3>
+            <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wider">2. Tìm kiếm nội dung văn bản</h3>
             <!-- Bộ lọc định dạng file -->
             <div class="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl">
               <button onclick="setFilter('ALL')" id="filter-all" class="filter-btn active px-3 py-1 rounded-lg text-xs font-medium transition">Tất cả</button>
@@ -137,7 +151,7 @@
           </div>
 
           <div class="relative">
-            <input type="text" id="search-query" oninput="onSearchInput()" placeholder="Nhập từ khóa tìm kiếm (gõ đến đâu tự động hiển thị kết quả đến đó)..." class="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            <input type="text" id="search-query" oninput="onSearchInput()" placeholder="Gõ từ khóa tìm kiếm (kết quả hiển thị tức thì theo từng ký tự gõ)..." class="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
             <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
           </div>
 
@@ -150,11 +164,11 @@
               <table class="w-full text-left text-sm text-slate-600">
                 <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
                   <tr>
-                    <th class="p-3 w-1/4">Tên file</th>
-                    <th class="p-3 w-20 text-center">Loại</th>
-                    <th class="p-3 w-20 text-center">Trang</th>
+                    <th class="p-3 w-5/12">Tài liệu / Vị trí</th>
+                    <th class="p-3 w-16 text-center">Loại</th>
+                    <th class="p-3 w-16 text-center">Trang</th>
                     <th class="p-3">Đoạn văn trích dẫn</th>
-                    <th class="p-3 w-24 text-center">Thao tác</th>
+                    <th class="p-3 w-28 text-center">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody id="search-results-body" class="divide-y divide-slate-100">
@@ -184,16 +198,15 @@
             <table class="w-full text-left text-sm text-slate-600">
               <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
                 <tr>
-                  <th class="p-3 w-1/3">Tên tài liệu</th>
-                  <th class="p-3 w-24 text-center">Loại</th>
+                  <th class="p-3">Tài liệu / Vị trí lưu (Bấm tên để mở file hoặc copy path)</th>
+                  <th class="p-3 w-20 text-center">Loại</th>
                   <th class="p-3 w-24 text-center">Số trang</th>
-                  <th class="p-3">Đường dẫn đầy đủ</th>
-                  <th class="p-3 w-24 text-center">Thao tác</th>
+                  <th class="p-3 w-28 text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="scanned-files-body" class="divide-y divide-slate-100">
                 <tr>
-                  <td colspan="5" class="p-8 text-center text-slate-400">Chưa có tài liệu nào. Vui lòng quét thư mục ở mục trên.</td>
+                  <td colspan="4" class="p-8 text-center text-slate-400">Chưa có tài liệu nào. Vui lòng quét thư mục ở mục trên.</td>
                 </tr>
               </tbody>
             </table>
@@ -404,8 +417,12 @@
       if (tabId === 'kpi') loadKpiData();
     }
 
-    // TAB 1: CHỌN THƯ MỤC NATIVE WINDOWS
+    // TAB 1: DUYỆT THƯ MỤC NATIVE WINDOWS (FOREGROUND)
     async function pickFolder() {
+      const btn = document.getElementById('btn-pick-folder');
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-blue-600"></i><span>Đang mở...</span>';
       try {
         const res = await fetch('/api/pick-folder');
         const selected = await res.json();
@@ -414,13 +431,46 @@
         }
       } catch (err) {
         console.error('Lỗi chọn thư mục:', err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
       }
     }
 
-    // BẮT ĐẦU QUÉT
+    // TẢI DANH SÁCH Ổ ĐĨA & THƯ MỤC CÓ SẴN TRÊN MÁY
+    async function loadDrives() {
+      const container = document.getElementById('quick-drives');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/system-drives');
+        const list = await res.json();
+        container.innerHTML = list.map(item => `
+          <button onclick="setFolderPath('${escapeJs(item.path)}')" 
+                  class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition flex items-center space-x-1 flex-shrink-0">
+            <span>${item.label}</span>
+          </button>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = '<span class="text-xs text-slate-400">Không tải được danh sách ổ đĩa</span>';
+      }
+    }
+
+    function setFolderPath(p) {
+      document.getElementById('folder-path').value = p;
+    }
+
+    function escapeJs(str) {
+      if (!str) return '';
+      return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    // BẮT ĐẦU QUÉT DỮ LIỆU TỨC THỜI
     async function startIndexing() {
       const folder = document.getElementById('folder-path').value.trim();
-      if (!folder) { alert('Vui lòng chọn hoặc nhập đường dẫn thư mục!'); return; }
+      if (!folder) {
+        alert('Vui lòng chọn ổ đĩa hoặc bấm Duyệt thư mục!');
+        return;
+      }
 
       document.getElementById('btn-index').classList.add('hidden');
       document.getElementById('btn-stop').classList.remove('hidden');
@@ -458,11 +508,12 @@
           const res = await fetch('/api/index/status');
           const st = await res.json();
 
-          document.getElementById('progress-bar').style.width = st.percent + '%';
-          document.getElementById('progress-percent').innerText = st.percent + '%';
-          document.getElementById('progress-title').innerText = st.message;
+          document.getElementById('progress-title').innerHTML = st.is_running 
+            ? '<i class="fa-solid fa-spinner fa-spin text-blue-600 mr-1.5"></i><span>' + st.message + '</span>'
+            : '<span>' + st.message + '</span>';
+          document.getElementById('progress-counter').innerText = `${st.scanned_count} tài liệu`;
           document.getElementById('progress-file').innerText = st.current_file ? 'Tập tin: ' + st.current_file : '';
-          document.getElementById('progress-counter').innerText = st.total_files > 0 ? `${st.scanned_count}/${st.total_files} file` : '';
+          document.getElementById('progress-percent').innerText = st.is_running ? 'Đang đọc...' : 'Hoàn thành';
           document.getElementById('index-status').innerText = st.message;
 
           if (!st.is_running) {
@@ -522,12 +573,40 @@
 
         tbody.innerHTML = items.map(item => `
           <tr class="hover:bg-slate-50/80 transition">
-            <td class="p-3 font-medium text-slate-800 break-all">${item.file_name}</td>
-            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-xs font-semibold ${item.file_type === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${item.file_type}</span></td>
-            <td class="p-3 text-center text-slate-500 font-medium">${item.page_number}</td>
-            <td class="p-3 text-slate-600 text-xs leading-relaxed">${item.snippet}</td>
-            <td class="p-3 text-center">
-              <button onclick="openFile('${encodeURIComponent(item.file_path)}')" class="px-3 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
+            <td class="p-3">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-1.5 flex-wrap">
+                  <i class="${item.file_type === 'PDF' ? 'fa-solid fa-file-pdf text-red-500' : 'fa-solid fa-file-word text-blue-500'} flex-shrink-0"></i>
+                  <a href="javascript:void(0)" onclick="openFile('${encodeURIComponent(item.file_path)}')" 
+                     title="Bấm để mở file trực tiếp" 
+                     class="font-semibold text-blue-600 hover:text-blue-800 hover:underline break-all">
+                    ${item.file_name}
+                  </a>
+                  <span class="text-slate-400 font-normal">/</span>
+                  <span class="text-xs text-slate-500 font-mono break-all" title="${item.file_path}">${item.file_path}</span>
+                </div>
+                <div class="flex items-center space-x-2 text-xs pt-0.5">
+                  <button onclick="copyToClipboard('${escapeJs(item.file_path)}', this)" 
+                          class="text-slate-500 hover:text-blue-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy path</span>
+                  </button>
+                  <button onclick="openFolder('${encodeURIComponent(item.file_path)}')" 
+                          class="text-slate-500 hover:text-amber-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <span>Mở thư mục</span>
+                  </button>
+                </div>
+              </div>
+            </td>
+            <td class="p-3 text-center align-top"><span class="px-2 py-0.5 rounded text-xs font-semibold ${item.file_type === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${item.file_type}</span></td>
+            <td class="p-3 text-center align-top text-slate-500 font-medium">${item.page_number}</td>
+            <td class="p-3 align-top text-slate-600 text-xs leading-relaxed">${item.snippet}</td>
+            <td class="p-3 text-center align-top">
+              <div class="flex flex-col space-y-1">
+                <button onclick="openFile('${encodeURIComponent(item.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
+                <button onclick="openFolder('${encodeURIComponent(item.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-medium transition">Mở folder</button>
+              </div>
             </td>
           </tr>
         `).join('');
@@ -545,21 +624,45 @@
 
         const tbody = document.getElementById('scanned-files-body');
         if (docs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">Chưa có tài liệu nào phù hợp. Vui lòng chọn thư mục và bấm Quét dữ liệu.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Chưa có tài liệu nào phù hợp. Vui lòng chọn vị trí và bấm Bắt đầu quét.</td></tr>';
           return;
         }
 
         tbody.innerHTML = docs.map(d => `
           <tr class="hover:bg-slate-50/80 transition">
-            <td class="p-3 font-semibold text-slate-800 break-all flex items-center space-x-2">
-              <i class="${d.file_type === 'PDF' ? 'fa-solid fa-file-pdf text-red-500' : 'fa-solid fa-file-word text-blue-500'}"></i>
-              <span>${d.file_name}</span>
+            <td class="p-3">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-1.5 flex-wrap">
+                  <i class="${d.file_type === 'PDF' ? 'fa-solid fa-file-pdf text-red-500' : 'fa-solid fa-file-word text-blue-500'} flex-shrink-0"></i>
+                  <a href="javascript:void(0)" onclick="openFile('${encodeURIComponent(d.file_path)}')" 
+                     title="Bấm để mở file trực tiếp" 
+                     class="font-semibold text-blue-600 hover:text-blue-800 hover:underline break-all">
+                    ${d.file_name}
+                  </a>
+                  <span class="text-slate-400 font-normal">/</span>
+                  <span class="text-xs text-slate-500 font-mono break-all" title="${d.file_path}">${d.file_path}</span>
+                </div>
+                <div class="flex items-center space-x-2 text-xs pt-0.5">
+                  <button onclick="copyToClipboard('${escapeJs(d.file_path)}', this)" 
+                          class="text-slate-500 hover:text-blue-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy path</span>
+                  </button>
+                  <button onclick="openFolder('${encodeURIComponent(d.file_path)}')" 
+                          class="text-slate-500 hover:text-amber-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <span>Mở thư mục</span>
+                  </button>
+                </div>
+              </div>
             </td>
-            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-xs font-semibold ${d.file_type === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${d.file_type}</span></td>
-            <td class="p-3 text-center font-medium text-slate-600">${d.total_pages}</td>
-            <td class="p-3 text-slate-500 text-xs truncate max-w-xs font-mono" title="${d.file_path}">${d.file_path}</td>
-            <td class="p-3 text-center">
-              <button onclick="openFile('${encodeURIComponent(d.file_path)}')" class="px-3 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
+            <td class="p-3 text-center align-top"><span class="px-2 py-0.5 rounded text-xs font-semibold ${d.file_type === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${d.file_type}</span></td>
+            <td class="p-3 text-center align-top font-medium text-slate-600">${d.total_pages}</td>
+            <td class="p-3 text-center align-top">
+              <div class="flex flex-col space-y-1">
+                <button onclick="openFile('${encodeURIComponent(d.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
+                <button onclick="openFolder('${encodeURIComponent(d.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-medium transition">Mở folder</button>
+              </div>
             </td>
           </tr>
         `).join('');
@@ -570,6 +673,29 @@
 
     async function openFile(encodedPath) {
       await fetch('/api/open-file?path=' + encodedPath);
+    }
+
+    async function openFolder(encodedPath) {
+      await fetch('/api/open-folder?path=' + encodedPath);
+    }
+
+    function copyToClipboard(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i><span class="text-emerald-600 font-semibold">Đã chép!</span>';
+        setTimeout(() => { btn.innerHTML = oldHtml; }, 1600);
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i><span class="text-emerald-600 font-semibold">Đã chép!</span>';
+        setTimeout(() => { btn.innerHTML = oldHtml; }, 1600);
+      });
+    }
     }
 
     // TAB 2: CATALOG
@@ -730,7 +856,8 @@
       }).then(() => loadKpiData());
     }
 
-    // Tự động tải danh sách file đã quét ban đầu khi mở app
+    // Tự động tải danh sách ổ đĩa và danh sách file đã quét ban đầu khi mở app
+    loadDrives();
     loadScannedFiles();
   </script>
 </body>

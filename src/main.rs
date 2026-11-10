@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use state::{AppState, IndexingStatus};
 use std::fs;
 use std::net::SocketAddr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -41,16 +41,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = Router::new()
         .route("/", get(index_handler))
-        // API Chọn thư mục
+        // API Chọn thư mục & Ổ đĩa
         .route("/api/pick-folder", get(pick_folder_handler))
+        .route("/api/system-drives", get(get_system_drives_handler))
         // API Lập chỉ mục có tiến trình & nút dừng
         .route("/api/index/start", post(start_indexing_handler))
         .route("/api/index/stop", post(stop_indexing_handler))
         .route("/api/index/status", get(get_indexing_status_handler))
         .route("/api/scanned-files", get(get_scanned_files_handler))
-        // API Tìm kiếm
+        // API Tìm kiếm & Mở file/thư mục
         .route("/api/search", get(search_handler))
         .route("/api/open-file", get(open_file_handler))
+        .route("/api/open-folder", get(open_folder_handler))
         // API Lập danh mục
         .route("/api/catalog/extract", post(extract_catalog_handler))
         .route("/api/catalog/export", post(export_catalog_handler))
@@ -91,17 +93,60 @@ async fn index_handler() -> Html<&'static str> {
     Html(ui::INDEX_HTML)
 }
 
-/// Mở hộp thoại chọn thư mục chuẩn Windows
+/// Mở hộp thoại chọn thư mục chuẩn Windows (TopMost foreground)
 async fn pick_folder_handler() -> Json<Option<String>> {
-    let folder = tokio::task::spawn_blocking(|| {
-        rfd::FileDialog::new()
-            .set_title("Chọn thư mục chứa tài liệu PDF và Word")
-            .pick_folder()
-    })
-    .await
-    .unwrap_or(None);
+    let folder = tokio::task::spawn_blocking(utils::pick_folder_native)
+        .await
+        .unwrap_or(None);
+    Json(folder)
+}
 
-    Json(folder.map(|p| p.to_string_lossy().to_string()))
+#[derive(Serialize)]
+struct DriveItem {
+    label: String,
+    path: String,
+}
+
+/// Lấy danh sách các ổ đĩa và thư mục tài liệu thông dụng
+async fn get_system_drives_handler() -> Json<Vec<DriveItem>> {
+    let mut items = Vec::new();
+    items.push(DriveItem {
+        label: "🚀 Toàn bộ máy (Tất cả ổ đĩa)".into(),
+        path: "ALL".into(),
+    });
+
+    for d in utils::get_system_drives() {
+        items.push(DriveItem {
+            label: format!("Ổ {}", d),
+            path: d,
+        });
+    }
+
+    if let Ok(profile) = std::env::var("USERPROFILE") {
+        let docs = format!("{}\\Documents", profile);
+        if Path::new(&docs).exists() {
+            items.push(DriveItem {
+                label: "📁 Documents".into(),
+                path: docs,
+            });
+        }
+        let desktop = format!("{}\\Desktop", profile);
+        if Path::new(&desktop).exists() {
+            items.push(DriveItem {
+                label: "🖥️ Desktop".into(),
+                path: desktop,
+            });
+        }
+        let downloads = format!("{}\\Downloads", profile);
+        if Path::new(&downloads).exists() {
+            items.push(DriveItem {
+                label: "📥 Downloads".into(),
+                path: downloads,
+            });
+        }
+    }
+
+    Json(items)
 }
 
 #[derive(Deserialize)]
@@ -115,20 +160,51 @@ struct GenericRes {
     message: String,
 }
 
-/// Bắt đầu quét thư mục chạy nền bất đồng bộ
+/// Kiểm tra thư mục hệ thống / rác cần bỏ qua để quét siêu tốc không bị đơ
+fn is_ignored_dir(name: &str) -> bool {
+    let lower = name.to_lowercase();
+    matches!(
+        lower.as_str(),
+        "$recycle.bin"
+            | "$winreagent"
+            | "system volume information"
+            | "recovery"
+            | "windows"
+            | "winsxs"
+            | "program files"
+            | "program files (x86)"
+            | "node_modules"
+            | ".git"
+            | ".svn"
+            | ".cache"
+            | "target"
+            | "vendor"
+            | "appdata"
+    )
+}
+
+/// Bắt đầu quét thư mục hoặc toàn bộ máy (Streaming Indexing tức thì)
 async fn start_indexing_handler(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<IndexFolderReq>,
 ) -> Json<GenericRes> {
     let folder = payload.folder.trim().to_string();
-    let folder_path = PathBuf::from(&folder);
 
-    if !folder_path.exists() || !folder_path.is_dir() {
-        return Json(GenericRes {
-            success: false,
-            message: "Thư mục không tồn tại hoặc không hợp lệ!".into(),
-        });
-    }
+    let targets: Vec<PathBuf> = if folder.eq_ignore_ascii_case("all")
+        || folder.to_lowercase().contains("toàn bộ")
+        || folder.is_empty()
+    {
+        utils::get_system_drives().into_iter().map(PathBuf::from).collect()
+    } else {
+        let p = PathBuf::from(&folder);
+        if !p.exists() || !p.is_dir() {
+            return Json(GenericRes {
+                success: false,
+                message: format!("Đường dẫn thư mục '{}' không tồn tại hoặc không hợp lệ!", folder),
+            });
+        }
+        vec![p]
+    };
 
     {
         let mut status = state.indexing_status.lock().unwrap();
@@ -143,7 +219,7 @@ async fn start_indexing_handler(
         status.percent = 0;
         status.scanned_count = 0;
         status.total_files = 0;
-        status.message = "Đang thu thập danh sách file...".into();
+        status.message = "Đang khởi tạo trình quét dữ liệu tức thì...".into();
     }
     state.stop_flag.store(false, Ordering::SeqCst);
 
@@ -153,105 +229,110 @@ async fn start_indexing_handler(
         let status_arc = state_clone.indexing_status.clone();
         let db_arc = state_clone.db.clone();
 
-        // 1. Quét tìm tất cả các file PDF & DOCX
-        let mut files = Vec::new();
-        for entry in WalkDir::new(&folder_path).into_iter().filter_map(|e| e.ok()) {
+        let mut total_indexed = 0;
+
+        for target_dir in targets {
             if stop_flag.load(Ordering::SeqCst) {
                 break;
             }
-            let p = entry.path();
-            if p.is_file() {
-                if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
-                    let ext_lower = ext.to_lowercase();
-                    if ext_lower == "pdf" || ext_lower == "docx" {
-                        files.push((p.to_path_buf(), ext_lower));
-                    }
-                }
-            }
-        }
-
-        let total = files.len();
-        {
-            let mut status = status_arc.lock().unwrap();
-            status.total_files = total;
-            status.message = format!("Tìm thấy {} file tài liệu. Đang lập chỉ mục...", total);
-        }
-
-        if total == 0 {
-            let mut status = status_arc.lock().unwrap();
-            status.is_running = false;
-            status.message = "Không tìm thấy file PDF hoặc Word nào trong thư mục!".into();
-            return;
-        }
-
-        let now_str = Local::now().format("%d/%m/%Y %H:%M:%S").to_string();
-        let mut processed = 0;
-
-        for (file_p, ext) in files {
-            if stop_flag.load(Ordering::SeqCst) {
-                let mut status = status_arc.lock().unwrap();
-                status.is_running = false;
-                status.stopped = true;
-                status.message = format!("Đã dừng quét! Đã lập chỉ mục {} file.", processed);
-                return;
-            }
-
-            let file_name = file_p.file_name().unwrap_or_default().to_string_lossy().to_string();
-            let file_path_str = file_p.to_string_lossy().to_string();
 
             {
                 let mut status = status_arc.lock().unwrap();
-                status.current_file = file_name.clone();
-                status.scanned_count = processed;
-                status.percent = ((processed as f64 / total as f64) * 100.0) as usize;
-                status.message = format!("Đang đọc file {}/{}: {}", processed + 1, total, file_name);
+                status.message = format!("Đang quét: {}...", target_dir.display());
             }
 
-            if ext == "docx" {
-                if let Ok(text) = extract_text_from_docx(&file_p) {
-                    if !text.trim().is_empty() {
-                        let text_no_acc = remove_accents(&text);
-                        let conn = db_arc.lock().unwrap();
-                        let _ = conn.execute(
-                            "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                            rusqlite::params![file_path_str, file_name, "WORD", 1, text, text_no_acc, now_str],
-                        );
-                        let _ = conn.execute(
-                            "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                            rusqlite::params![file_path_str, file_name, "WORD", 1, text, text_no_acc],
-                        );
+            let walker = WalkDir::new(&target_dir)
+                .into_iter()
+                .filter_entry(|e| {
+                    if e.file_type().is_dir() && e.depth() > 0 {
+                        if let Some(name) = e.file_name().to_str() {
+                            if is_ignored_dir(name) {
+                                return false;
+                            }
+                        }
                     }
+                    true
+                });
+
+            for entry in walker.filter_map(|e| e.ok()) {
+                if stop_flag.load(Ordering::SeqCst) {
+                    break;
                 }
-            } else if ext == "pdf" {
-                if let Ok(pages) = extract_text_from_pdf(&file_p) {
-                    let conn = db_arc.lock().unwrap();
-                    for (page_no, text) in pages {
-                        let text_no_acc = remove_accents(&text);
-                        let _ = conn.execute(
-                            "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                            rusqlite::params![file_path_str, file_name, "PDF", page_no, text, text_no_acc, now_str],
-                        );
-                        let _ = conn.execute(
-                            "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                            rusqlite::params![file_path_str, file_name, "PDF", page_no, text, text_no_acc],
-                        );
+
+                let p = entry.path();
+                if p.is_file() {
+                    if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
+                        let ext_lower = ext.to_lowercase();
+                        if ext_lower == "pdf" || ext_lower == "docx" {
+                            let file_name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
+                            let file_path_str = p.to_string_lossy().to_string();
+
+                            total_indexed += 1;
+                            {
+                                let mut status = status_arc.lock().unwrap();
+                                status.scanned_count = total_indexed;
+                                status.current_file = file_name.clone();
+                                status.message = format!("Đã quét {} tài liệu (Đang đọc: {})", total_indexed, file_name);
+                            }
+
+                            let now_str = Local::now().format("%d/%m/%Y %H:%M:%S").to_string();
+                            if ext_lower == "docx" {
+                                if let Ok(text) = extract_text_from_docx(p) {
+                                    if !text.trim().is_empty() {
+                                        let text_no_acc = remove_accents(&text);
+                                        let conn = db_arc.lock().unwrap();
+                                        let _ = conn.execute("DELETE FROM documents WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        let _ = conn.execute("DELETE FROM documents_fts WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        let _ = conn.execute(
+                                            "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                                            rusqlite::params![file_path_str, file_name, "WORD", 1, text, text_no_acc, now_str],
+                                        );
+                                        let _ = conn.execute(
+                                            "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                                            rusqlite::params![file_path_str, file_name, "WORD", 1, text, text_no_acc],
+                                        );
+                                    }
+                                }
+                            } else if ext_lower == "pdf" {
+                                if let Ok(pages) = extract_text_from_pdf(p) {
+                                    if !pages.is_empty() {
+                                        let conn = db_arc.lock().unwrap();
+                                        let _ = conn.execute("DELETE FROM documents WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        let _ = conn.execute("DELETE FROM documents_fts WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        for (page_no, text) in pages {
+                                            let text_no_acc = remove_accents(&text);
+                                            let _ = conn.execute(
+                                                "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                                                rusqlite::params![file_path_str, file_name, "PDF", page_no, text, text_no_acc, now_str],
+                                            );
+                                            let _ = conn.execute(
+                                                "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                                                rusqlite::params![file_path_str, file_name, "PDF", page_no, text, text_no_acc],
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
-
-            processed += 1;
         }
 
         let mut status = status_arc.lock().unwrap();
         status.is_running = false;
         status.percent = 100;
-        status.scanned_count = processed;
-        status.message = format!("Hoàn thành! Đã quét và lập chỉ mục thành công {} file.", processed);
+        status.scanned_count = total_indexed;
+        if status.stopped {
+            status.message = format!("Đã dừng quét! Đã lập chỉ mục {} tài liệu.", total_indexed);
+        } else {
+            status.message = format!("Hoàn tất! Đã lập chỉ mục thành công {} tài liệu.", total_indexed);
+        }
     });
 
     Json(GenericRes {
         success: true,
-        message: "Đã bắt đầu tiến trình quét dữ liệu...".into(),
+        message: "Đã bắt đầu tiến trình quét dữ liệu tức thì...".into(),
     })
 }
 
@@ -259,9 +340,8 @@ async fn start_indexing_handler(
 async fn stop_indexing_handler(State(state): State<Arc<AppState>>) -> Json<GenericRes> {
     state.stop_flag.store(true, Ordering::SeqCst);
     let mut status = state.indexing_status.lock().unwrap();
-    status.is_running = false;
     status.stopped = true;
-    status.message = "Đang dừng tiến trình...".into();
+    status.message = "Đang gửi tín hiệu dừng quét...".into();
 
     Json(GenericRes {
         success: true,
@@ -316,6 +396,11 @@ struct OpenFileReq {
 
 async fn open_file_handler(Query(params): Query<OpenFileReq>) -> Json<bool> {
     let _ = utils::open_file_or_folder(&params.path);
+    Json(true)
+}
+
+async fn open_folder_handler(Query(params): Query<OpenFileReq>) -> Json<bool> {
+    let _ = utils::open_containing_folder(&params.path);
     Json(true)
 }
 
