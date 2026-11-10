@@ -76,7 +76,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("============================================================");
     println!("  CYA SUITE - HỆ THỐNG VĂN PHÒNG & TỰ ĐỘNG HÓA AI (RUST)");
-    println!("  Tác giả: Nguyễn Tiến Hùng (cyaNguyen)");
     println!("============================================================");
     println!("  -> Máy chủ đang chạy tại: {}", url);
     println!("  -> Đang tự động mở trình duyệt...");
