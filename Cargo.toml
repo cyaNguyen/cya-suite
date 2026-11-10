@@ -1,0 +1,25 @@
+[package]
+name = "cya-suite"
+version = "1.0.0"
+edition = "2021"
+authors = ["Nguyen Tien Hung (cyaNguyen) <nthung2470@gmail.com>"]
+description = "CYA Suite - All-In-One High Performance Office & Document AI Toolkit written in Rust"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.8", features = ["multipart"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rusqlite = { version = "0.33", features = ["bundled", "bundled-full"] }
+tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
+futures-util = "0.3"
+regex = "1.11"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.11", features = ["v4", "fast-rng"] }
+walkdir = "2.5"
+zip = "2.2"
+webbrowser = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+lopdf = "0.35"

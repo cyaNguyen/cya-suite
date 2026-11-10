@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYA Suite - Bộ công cụ Văn phòng & AI Siêu tốc</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .nav-btn.active { background-color: #2563eb; color: #ffffff; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased flex h-screen overflow-hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shadow-xl flex-shrink-0">
+    <div>
+      <!-- Brand Header -->
+      <div class="p-6 border-b border-slate-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+            <i class="fa-solid fa-bolt text-lg"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-white tracking-wide text-lg">CYA SUITE</h1>
+            <p class="text-xs text-blue-400 font-medium">Rust High Performance</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="p-4 space-y-1.5">
+        <button onclick="switchTab('search')" id="nav-search" class="nav-btn active w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-slate-800">
+          <i class="fa-solid fa-magnifying-glass w-5 text-center"></i>
+          <span>Tìm kiếm tài liệu</span>
+        </button>
+
+        <button onclick="switchTab('catalog')" id="nav-catalog" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-slate-800">
+          <i class="fa-solid fa-folder-tree w-5 text-center"></i>
+          <span>Lập danh mục hồ sơ</span>
+        </button>
+
+        <button onclick="switchTab('voice')" id="nav-voice" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-slate-800">
+          <i class="fa-solid fa-microphone-lines w-5 text-center"></i>
+          <span>AI Voice Studio</span>
+        </button>
+
+        <button onclick="switchTab('kpi')" id="nav-kpi" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-slate-800">
+          <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+          <span>Đánh giá & KPI</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Author & Owner Info -->
+    <div class="p-4 border-t border-slate-800 bg-slate-950/50">
+      <div class="text-xs space-y-2">
+        <div class="flex items-center space-x-2 text-emerald-400 font-semibold">
+          <i class="fa-solid fa-circle-check"></i>
+          <span>Bản quyền Vĩnh viễn (Đã mở khóa)</span>
+        </div>
+        <p class="text-slate-400 font-medium">Tác giả: <span class="text-white font-semibold">Nguyễn Tiến Hùng</span></p>
+        <div class="flex space-x-3 pt-1 text-slate-400">
+          <a href="https://www.facebook.com/nguyen.tien.hung.409785/" target="_blank" class="hover:text-blue-400 text-sm" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
+          <a href="https://t.me/cyanguyen" target="_blank" class="hover:text-sky-400 text-sm" title="Telegram: cyanguyen"><i class="fa-brands fa-telegram"></i></a>
+          <a href="https://github.com/cyaNguyen" target="_blank" class="hover:text-white text-sm" title="GitHub: cyaNguyen"><i class="fa-brands fa-github"></i></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+    
+    <!-- Top Header Bar -->
+    <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
+      <div class="flex items-center space-x-4">
+        <h2 id="top-title" class="text-xl font-bold text-slate-800">Tìm kiếm tài liệu siêu tốc (PDF & Word)</h2>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Native Rust Engine</span>
+      </div>
+      <div class="text-xs text-slate-500">
+        Phiên bản 1.0.0 • Siêu nhẹ • Tốc độ cao
+      </div>
+    </header>
+
+    <!-- TAB 1: TÌM KIẾM TÀI LIỆU -->
+    <section id="tab-search" class="tab-content active flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-6">
+        
+        <!-- Quét thư mục -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">1. Thư mục dữ liệu</h3>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="text" id="folder-path" placeholder="Nhập đường dẫn thư mục chứa PDF và Word (VD: D:\Tài liệu hoặc E:\Documents)..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            <button onclick="startIndexing()" id="btn-index" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Quét & Lập chỉ mục</span>
+            </button>
+          </div>
+          <div id="index-status" class="mt-3 text-xs text-slate-500">Chưa quét. Sẵn sàng lập chỉ mục siêu tốc FTS5.</div>
+        </div>
+
+        <!-- Tìm kiếm -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">2. Tìm kiếm nội dung</h3>
+          <div class="flex gap-3">
+            <input type="text" id="search-query" onkeydown="if(event.key==='Enter') doSearch()" placeholder="Nhập từ khóa tìm kiếm (có dấu hoặc không dấu)..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            <button onclick="doSearch()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center space-x-2">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span>Tìm kiếm</span>
+            </button>
+          </div>
+
+          <!-- Bảng kết quả -->
+          <div class="mt-6">
+            <div class="flex items-center justify-between mb-3">
+              <span id="search-summary" class="text-xs text-slate-500 font-medium">Chưa có kết quả tìm kiếm</span>
+            </div>
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+              <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                  <tr>
+                    <th class="p-3 w-1/4">Tên file</th>
+                    <th class="p-3 w-20 text-center">Loại</th>
+                    <th class="p-3 w-20 text-center">Trang</th>
+                    <th class="p-3">Đoạn văn trích dẫn</th>
+                    <th class="p-3 w-24 text-center">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="search-results-body" class="divide-y divide-slate-100">
+                  <tr>
+                    <td colspan="5" class="p-8 text-center text-slate-400">Nhập từ khóa và bấm Tìm kiếm để tra cứu</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: LẬP DANH MỤC HỒ SƠ -->
+    <section id="tab-catalog" class="tab-content flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-6">
+        
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base font-bold text-slate-800">Lập danh mục văn bản hồ sơ lưu trữ (Mẫu số 03)</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Trích xuất tự động thông tin từ PDF hoặc thêm thủ công, xuất file Word chuẩn đẹp</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="addCatalogRow()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition flex items-center space-x-2">
+              <i class="fa-solid fa-plus"></i>
+              <span>Thêm dòng</span>
+            </button>
+            <button onclick="exportWordCatalog()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center space-x-2">
+              <i class="fa-solid fa-file-word"></i>
+              <span>Xuất file Word (.docx)</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3 w-12 text-center">STT</th>
+                  <th class="p-3 w-40">Số, ký hiệu</th>
+                  <th class="p-3 w-32">Ngày ban hành</th>
+                  <th class="p-3 w-48">Cơ quan ban hành</th>
+                  <th class="p-3">Trích yếu nội dung</th>
+                  <th class="p-3 w-20 text-center">Tờ số</th>
+                  <th class="p-3 w-28 text-center">Độ mật</th>
+                  <th class="p-3 w-16 text-center">Xóa</th>
+                </tr>
+              </thead>
+              <tbody id="catalog-rows-body" class="divide-y divide-slate-100">
+                <!-- Dynamic Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 3: AI VOICE STUDIO -->
+    <section id="tab-voice" class="tab-content flex-1 overflow-y-auto p-8">
+      <div class="max-w-4xl mx-auto space-y-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <h3 class="text-base font-bold text-slate-800">Chuyển văn bản thành giọng nói (Edge TTS)</h3>
+          
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Văn bản cần đọc</label>
+            <textarea id="tts-text" rows="6" placeholder="Nhập hoặc dán nội dung văn bản tiếng Việt vào đây..." class="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Giọng đọc</label>
+              <select id="tts-voice" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white">
+                <option value="vi-VN-HoaiMyNeural">Hoài My (Nữ - Truyền cảm, tự nhiên)</option>
+                <option value="vi-VN-NamMinhNeural">Nam Minh (Nam - Trầm ấm, dứt khoát)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tốc độ đọc: <span id="rate-val">0%</span></label>
+              <input type="range" id="tts-rate" min="-50" max="50" value="0" oninput="document.getElementById('rate-val').innerText = (this.value >= 0 ? '+' : '') + this.value + '%'" class="w-full mt-2">
+            </div>
+          </div>
+
+          <div class="pt-2 flex items-center justify-between">
+            <button onclick="generateVoice()" id="btn-tts" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center space-x-2">
+              <i class="fa-solid fa-play"></i>
+              <span>Tạo giọng nói & Phụ đề SRT</span>
+            </button>
+            <span id="tts-status" class="text-xs text-slate-500"></span>
+          </div>
+        </div>
+
+        <!-- Kết quả Audio -->
+        <div id="voice-result-box" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <h4 class="text-sm font-semibold text-slate-700">Âm thanh đã tạo</h4>
+          <audio id="tts-audio" controls class="w-full rounded-xl"></audio>
+          <div class="flex gap-3 pt-2">
+            <a id="btn-download-mp3" href="#" download="audio.mp3" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5">
+              <i class="fa-solid fa-download"></i>
+              <span>Tải file MP3</span>
+            </a>
+            <a id="btn-download-srt" href="#" download="subtitles.srt" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center space-x-1.5">
+              <i class="fa-solid fa-closed-captioning"></i>
+              <span>Tải phụ đề SRT</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: ĐÁNH GIÁ & KPI -->
+    <section id="tab-kpi" class="tab-content flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-6">
+        
+        <!-- Bộ lọc tháng & năm -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center space-x-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Tháng</label>
+              <select id="kpi-month" onchange="loadKpiData()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
+                <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
+                <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6" selected>Tháng 6</option>
+                <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
+                <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Năm</label>
+              <select id="kpi-year" onchange="loadKpiData()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white">
+                <option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="openAddTaskModal()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition shadow-sm flex items-center space-x-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Giao nhiệm vụ & Chấm điểm</span>
+          </button>
+        </div>
+
+        <!-- Bảng xếp loại cán bộ -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Bảng tổng hợp xếp loại thi đua tháng</h3>
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">Họ và tên cán bộ</th>
+                  <th class="p-3">Chức vụ</th>
+                  <th class="p-3 text-center">Số nhiệm vụ</th>
+                  <th class="p-3 text-center">Tổng điểm KPI</th>
+                  <th class="p-3">Xếp loại chất lượng</th>
+                </tr>
+              </thead>
+              <tbody id="kpi-summary-body" class="divide-y divide-slate-100">
+                <!-- Dynamic Summary -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Danh sách nhiệm vụ chi tiết -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Chi tiết nhiệm vụ được giao</h3>
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">Cán bộ</th>
+                  <th class="p-3">Nhiệm vụ</th>
+                  <th class="p-3">Chất lượng</th>
+                  <th class="p-3">Tiến độ</th>
+                  <th class="p-3 text-center">Điểm đạt</th>
+                  <th class="p-3">Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody id="kpi-tasks-body" class="divide-y divide-slate-100">
+                <!-- Dynamic Tasks -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.getElementById('nav-' + tabId).classList.add('active');
+
+      const titles = {
+        'search': 'Tìm kiếm tài liệu siêu tốc (PDF & Word)',
+        'catalog': 'Lập danh mục hồ sơ lưu trữ (Mẫu số 03)',
+        'voice': 'AI Voice Studio (Microsoft Edge TTS)',
+        'kpi': 'Hệ thống Quản lý & Đánh giá KPI Cán bộ'
+      };
+      document.getElementById('top-title').innerText = titles[tabId];
+
+      if (tabId === 'catalog' && catalogRows.length === 0) loadInitialCatalog();
+      if (tabId === 'kpi') loadKpiData();
+    }
+
+    async function startIndexing() {
+      const folder = document.getElementById('folder-path').value.trim();
+      if (!folder) { alert('Vui lòng nhập đường dẫn thư mục!'); return; }
+      
+      const btn = document.getElementById('btn-index');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang quét...</span>';
+      document.getElementById('index-status').innerText = 'Đang quét thư mục và lập chỉ mục FTS5...';
+
+      try {
+        const res = await fetch('/api/index', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ folder })
+        });
+        const data = await res.json();
+        document.getElementById('index-status').innerText = data.message;
+      } catch (err) {
+        document.getElementById('index-status').innerText = 'Lỗi: ' + err;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-rotate"></i> <span>Quét & Lập chỉ mục</span>';
+      }
+    }
+
+    async function doSearch() {
+      const q = document.getElementById('search-query').value.trim();
+      if (!q) return;
+
+      const tbody = document.getElementById('search-results-body');
+      tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin"></i> Đang tìm kiếm...</td></tr>';
+
+      try {
+        const res = await fetch('/api/search?q=' + encodeURIComponent(q));
+        const items = await res.json();
+        document.getElementById('search-summary').innerText = `Tìm thấy ${items.length} kết quả phù hợp`;
+
+        if (items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">Không tìm thấy tài liệu phù hợp từ khóa</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = items.map(item => `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="p-3 font-medium text-slate-800 break-all">${item.file_name}</td>
+            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-xs font-semibold ${item.file_type === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${item.file_type}</span></td>
+            <td class="p-3 text-center text-slate-500">${item.page_number}</td>
+            <td class="p-3 text-slate-600 text-xs leading-relaxed">${item.snippet}</td>
+            <td class="p-3 text-center">
+              <button onclick="openFile('${encodeURIComponent(item.file_path)}')" class="px-3 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Lỗi tìm kiếm: ${err}</td></tr>`;
+      }
+    }
+
+    async function openFile(encodedPath) {
+      await fetch('/api/open-file?path=' + encodedPath);
+    }
+
+    let catalogRows = [
+      { stt: 1, so_ky_hieu: '12/KH-CAT', ngay_ban_hanh: '10/01/2026', co_quan_ban_hanh: 'Công an tỉnh', trich_yeu: 'Kế hoạch công tác thanh tra, kiểm tra năm 2026', to_so: '01-05', do_mat: 'Thường', ghi_chu: 'Bản chính' },
+      { stt: 2, so_ky_hieu: '05/QĐ-CAT', ngay_ban_hanh: '15/02/2026', co_quan_ban_hanh: 'Công an tỉnh', trich_yeu: 'Quyết định thành lập Đoàn thanh tra hành chính', to_so: '06-08', do_mat: 'Thường', ghi_chu: '' }
+    ];
+
+    function loadInitialCatalog() {
+      renderCatalogRows();
+    }
+
+    function renderCatalogRows() {
+      const tbody = document.getElementById('catalog-rows-body');
+      tbody.innerHTML = catalogRows.map((r, i) => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 text-center font-medium">${i + 1}</td>
+          <td class="p-3"><input type="text" value="${r.so_ky_hieu}" onchange="catalogRows[${i}].so_ky_hieu=this.value" class="w-full px-2 py-1 border rounded text-xs"></td>
+          <td class="p-3"><input type="text" value="${r.ngay_ban_hanh}" onchange="catalogRows[${i}].ngay_ban_hanh=this.value" class="w-full px-2 py-1 border rounded text-xs"></td>
+          <td class="p-3"><input type="text" value="${r.co_quan_ban_hanh}" onchange="catalogRows[${i}].co_quan_ban_hanh=this.value" class="w-full px-2 py-1 border rounded text-xs"></td>
+          <td class="p-3"><input type="text" value="${r.trich_yeu}" onchange="catalogRows[${i}].trich_yeu=this.value" class="w-full px-2 py-1 border rounded text-xs"></td>
+          <td class="p-3 text-center"><input type="text" value="${r.to_so}" onchange="catalogRows[${i}].to_so=this.value" class="w-full px-2 py-1 border rounded text-xs text-center"></td>
+          <td class="p-3 text-center"><input type="text" value="${r.do_mat}" onchange="catalogRows[${i}].do_mat=this.value" class="w-full px-2 py-1 border rounded text-xs text-center"></td>
+          <td class="p-3 text-center"><button onclick="removeCatalogRow(${i})" class="text-red-500 hover:text-red-700 text-xs"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>
+      `).join('');
+    }
+
+    function addCatalogRow() {
+      catalogRows.push({
+        stt: catalogRows.length + 1,
+        so_ky_hieu: '',
+        ngay_ban_hanh: '',
+        co_quan_ban_hanh: '',
+        trich_yeu: '',
+        to_so: '',
+        do_mat: 'Thường',
+        ghi_chu: ''
+      });
+      renderCatalogRows();
+    }
+
+    function removeCatalogRow(idx) {
+      catalogRows.splice(idx, 1);
+      renderCatalogRows();
+    }
+
+    async function exportWordCatalog() {
+      if (catalogRows.length === 0) { alert('Danh mục chưa có dòng nào!'); return; }
+      const res = await fetch('/api/catalog/export', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ rows: catalogRows, title: 'HỒ SƠ THANH TRA NĂM 2026' })
+      });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Danh_Muc_Ho_So_Mau03.docx';
+      a.click();
+    }
+
+    async function generateVoice() {
+      const text = document.getElementById('tts-text').value.trim();
+      if (!text) { alert('Vui lòng nhập văn bản cần đọc!'); return; }
+      const voice = document.getElementById('tts-voice').value;
+      const rate = parseInt(document.getElementById('tts-rate').value);
+
+      const btn = document.getElementById('btn-tts');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang xử lý âm thanh...</span>';
+      document.getElementById('tts-status').innerText = 'Đang kết nối Microsoft Edge TTS...';
+
+      try {
+        const res = await fetch('/api/voice/synthesize', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ text, voice, rate })
+        });
+        const data = await res.json();
+        if (data.error) {
+          alert('Lỗi: ' + data.error);
+        } else {
+          document.getElementById('voice-result-box').classList.remove('hidden');
+          const audio = document.getElementById('tts-audio');
+          audio.src = data.audio_url;
+          audio.play();
+          document.getElementById('btn-download-mp3').href = data.audio_url;
+          document.getElementById('btn-download-srt').href = data.srt_url;
+          document.getElementById('tts-status').innerText = 'Hoàn thành!';
+        }
+      } catch (err) {
+        alert('Lỗi: ' + err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> <span>Tạo giọng nói & Phụ đề SRT</span>';
+      }
+    }
+
+    async function loadKpiData() {
+      const month = document.getElementById('kpi-month').value;
+      const year = document.getElementById('kpi-year').value;
+
+      try {
+        const resSummary = await fetch(`/api/kpi/summary?thang=${month}&nam=${year}`);
+        const summaries = await resSummary.json();
+        document.getElementById('kpi-summary-body').innerHTML = summaries.map(s => `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-semibold text-slate-800">${s.officer_name}</td>
+            <td class="p-3 text-slate-600">${s.chuc_vu}</td>
+            <td class="p-3 text-center font-medium">${s.total_tasks}</td>
+            <td class="p-3 text-center font-bold text-blue-600">${s.total_score}</td>
+            <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${s.total_score >= 90 ? 'bg-emerald-100 text-emerald-700' : s.total_score >= 75 ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}">${s.xep_loai}</span></td>
+          </tr>
+        `).join('');
+
+        const resTasks = await fetch(`/api/kpi/assignments?thang=${month}&nam=${year}`);
+        const tasks = await resTasks.json();
+        document.getElementById('kpi-tasks-body').innerHTML = tasks.map(t => `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-medium text-slate-800">${t.officer_name || ''}</td>
+            <td class="p-3 text-slate-700">${t.task_name || ''}</td>
+            <td class="p-3 text-xs">${t.chat_luong}</td>
+            <td class="p-3 text-xs">${t.tien_do}</td>
+            <td class="p-3 text-center font-bold text-emerald-600">${t.diem_dat}</td>
+            <td class="p-3 text-xs text-slate-500">${t.ghi_chu || ''}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function openAddTaskModal() {
+      const officer = prompt("Nhập ID cán bộ (1: Nguyễn Tiến Hùng, 2: Lê Văn Nam, 3: Trần Thị Mai):", "1");
+      if (!officer) return;
+      const task = prompt("Nhập ID nhiệm vụ (1-5):", "1");
+      if (!task) return;
+      
+      const month = parseInt(document.getElementById('kpi-month').value);
+      const year = parseInt(document.getElementById('kpi-year').value);
+
+      fetch('/api/kpi/assign', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          officer_id: parseInt(officer),
+          task_id: parseInt(task),
+          thang: month,
+          quy: Math.ceil(month / 3),
+          nam: year,
+          chat_luong: 'vuot_yeu_cau',
+          tien_do: 'dung_han',
+          ghi_chu: 'Hoàn thành tốt nhiệm vụ được giao'
+        })
+      }).then(() => loadKpiData());
+    }
+  </script>
+</body>
+</html>
