@@ -68,7 +68,18 @@ CYA SUITE tích hợp giao diện hiện đại, tối giản và thanh lịch, 
   * *Hoàn thành tốt nhiệm vụ* (Điểm 75 - 89)
   * *Hoàn thành nhiệm vụ* (Điểm 50 - 74)
   * *Không hoàn thành nhiệm vụ* (Điểm < 50)
-* **Cơ sở dữ liệu an toàn:** Lưu trữ SQLite ở chế độ WAL (`Write-Ahead Logging`), xử lý đa luồng an toàn, không bao giờ bị khóa database.
+* **Cơ sở dữ liệu an toàn:** Lưu trữ SQLite ở chế độ WAL (`Write-Ahead Logging`), xử lý đa luồng an toà, không bao giờ bị khóa database.
+
+### 🖨️ 5. Scan OCR Văn bản Offline (Nhận dạng văn bản in sẵn & Xuất Word .docx)
+* **100% Offline & Bảo mật tuyệt đối:** Sử dụng bộ máy Google Tesseract 5 Neural LSTM tích hợp sẵn kèm tập dữ liệu huấn luyện `vie.traineddata` tối ưu cao độ, không gửi ảnh lên bất kỳ máy chủ nào.
+* **Tải lên hàng loạt ảnh lẻ & Tự động xếp trang thông minh:** Hỗ trợ kéo thả hoặc chọn nhiều ảnh chụp từ điện thoại/máy scan (`.jpg`, `.png`, `.bmp`, `.tiff`, `.webp`). Tự động sắp xếp theo thứ tự số tự nhiên (`trang_1, trang_2 ... trang_10`).
+* **Kiểm soát & Điều chỉnh thứ tự trực quan:** Giao diện thẻ trực quan hiển thị ảnh thu nhỏ, cho phép bấm nút `[▲ Lên]`, `[▼ Xuống]` để sắp xếp lại trang trước khi quét nếu tài liệu bị xáo trộn.
+* **Khung tài liệu & Soát lỗi trực tiếp:** Kết quả nhận dạng được ghép liền mạch theo chuẩn khổ giấy in, phân chia từng trang rõ ràng, cho phép đọc và sửa lỗi trực tiếp trên trình duyệt.
+* **Đa dạng tùy chọn xuất dữ liệu:**
+  - 📥 **Xuất file Microsoft Word (.docx):** Tạo tài liệu Word chuẩn phông chữ Times New Roman 14pt, giãn dòng 1.15 và ngắt trang (`PageBreak`) đúng từng trang scan!
+  - 📋 **Sao chép văn bản:** 1-click copy toàn bộ nội dung.
+  - 📄 **Tải file văn bản thuần (.txt)**.
+  - 🖨️ **In & Xuất PDF trực tiếp**.
 
 ---
 

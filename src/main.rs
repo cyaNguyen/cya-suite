@@ -1,6 +1,7 @@
 mod catalog;
 mod db;
 mod kpi;
+mod ocr;
 mod search;
 mod state;
 mod ui;
@@ -8,7 +9,7 @@ mod utils;
 mod voice;
 
 use axum::{
-    extract::{Query, State},
+    extract::{Multipart, Query, State},
     http::header,
     response::{Html, IntoResponse, Response},
     routing::{get, post},
@@ -71,6 +72,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/kpi/assignments", get(get_assignments_handler))
         .route("/api/kpi/assign", post(add_assignment_handler))
         .route("/api/kpi/summary", get(get_kpi_summary_handler))
+        // API Scan OCR Văn bản
+        .route("/api/ocr/status", get(ocr_status_handler))
+        .route("/api/ocr/scan-batch", post(ocr_scan_batch_handler))
+        .route("/api/ocr/export-docx", post(ocr_export_docx_handler))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(shared_state);
@@ -775,3 +780,111 @@ async fn get_kpi_summary_handler(
     let list = kpi::get_kpi_summary(&conn, thang, nam).unwrap_or_default();
     Json(list)
 }
+
+// ==========================================
+// API SCAN OCR VĂN BẢN
+// ==========================================
+
+async fn ocr_status_handler() -> impl IntoResponse {
+    Json(ocr::check_ocr_status())
+}
+
+async fn ocr_scan_batch_handler(mut multipart: Multipart) -> impl IntoResponse {
+    let mut files: Vec<(String, usize, Vec<u8>)> = Vec::new();
+    let mut lang = "vie".to_string();
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        let name = field.name().unwrap_or("").to_string();
+        if name == "lang" {
+            if let Ok(text) = field.text().await {
+                lang = text;
+            }
+        } else {
+            let filename = field
+                .file_name()
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| format!("page_{}.png", files.len() + 1));
+
+            // Extract custom sequence if sent as field name e.g. "file_0", "file_1"
+            let order = if let Some(stripped) = name.strip_prefix("file_") {
+                stripped.parse::<usize>().unwrap_or(files.len())
+            } else {
+                files.len()
+            };
+
+            if let Ok(bytes) = field.bytes().await {
+                if !bytes.is_empty() {
+                    files.push((filename, order, bytes.to_vec()));
+                }
+            }
+        }
+    }
+
+    // Sort files by explicit order specified by client
+    files.sort_by_key(|f| f.1);
+
+    let mut pages = Vec::new();
+    let mut total_words = 0;
+    let mut total_chars = 0;
+    let mut combined_lines = Vec::new();
+
+    for (idx, (filename, _, bytes)) in files.into_iter().enumerate() {
+        let page_num = idx + 1;
+        let ocr_text = ocr::ocr_single_image(&bytes, &lang)
+            .unwrap_or_else(|e| format!("[Lỗi nhận dạng: {}]", e));
+        let word_count = ocr_text.split_whitespace().count();
+        let char_count = ocr_text.chars().count();
+
+        total_words += word_count;
+        total_chars += char_count;
+
+        combined_lines.push(format!("--- TRANG {} ({}) ---\n{}\n", page_num, filename, ocr_text));
+
+        pages.push(ocr::PageOcrResult {
+            page_number: page_num,
+            filename,
+            text: ocr_text,
+            word_count,
+            char_count,
+        });
+    }
+
+    let combined_text = combined_lines.join("\n");
+    let total_pages = pages.len();
+
+    Json(ocr::BatchOcrResponse {
+        success: true,
+        total_pages,
+        total_words,
+        total_chars,
+        pages,
+        combined_text,
+    })
+}
+
+async fn ocr_export_docx_handler(
+    Json(payload): Json<ocr::ExportDocxRequest>,
+) -> impl IntoResponse {
+    match ocr::generate_docx(&payload.title, &payload.pages) {
+        Ok(bytes) => (
+            [
+                (
+                    header::CONTENT_TYPE,
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ),
+                (
+                    header::CONTENT_DISPOSITION,
+                    "attachment; filename=\"TaiLieu_Scan_OCR.docx\"",
+                ),
+            ],
+            bytes,
+        )
+            .into_response(),
+        Err(err) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Lỗi xuất DOCX: {}", err),
+        )
+            .into_response(),
+    }
+}
+

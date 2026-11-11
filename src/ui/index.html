@@ -50,6 +50,11 @@
           <span>AI Voice Studio</span>
         </button>
 
+        <button onclick="switchTab('ocr')" id="nav-ocr" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-slate-800">
+          <i class="fa-solid fa-file-invoice w-5 text-center"></i>
+          <span>Scan OCR Văn bản</span>
+        </button>
+
         <button onclick="switchTab('kpi')" id="nav-kpi" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-slate-800">
           <i class="fa-solid fa-chart-pie w-5 text-center"></i>
           <span>Đánh giá & KPI</span>
@@ -459,6 +464,172 @@
       </div>
     </section>
 
+    <!-- TAB 5: SCAN OCR VĂN BẢN -->
+    <section id="tab-ocr" class="tab-content flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- Banner thông tin bộ máy OCR -->
+        <div class="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-2xl p-6 text-white shadow-md flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                100% Offline & Local
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                Tesseract 5 Neural LSTM (Độ chính xác cao)
+              </span>
+            </div>
+            <h3 class="text-lg font-bold text-white">Chuyển đổi Tài liệu giấy / Ảnh scan thành File Word</h3>
+            <p class="text-xs text-slate-300 max-w-2xl">
+              Hỗ trợ quét ảnh chụp văn bản in sẵn (Quyết định, Kế hoạch, Công văn...). Tự động sắp xếp trang số tự nhiên và cho phép kéo/thay đổi thứ tự trang trước khi xuất sang định dạng Word (.docx).
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="bg-white/10 backdrop-blur rounded-xl px-4 py-2 text-right">
+              <div class="text-[11px] text-slate-300">Ngôn ngữ nhận dạng:</div>
+              <div class="text-xs font-bold text-white flex items-center gap-1 justify-end">
+                <i class="fa-solid fa-language text-sky-400"></i>
+                <span id="ocr-lang-badge">Tiếng Việt (vie)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BƯỚC 1: TẢI ẢNH LÊN & SẮP XẾP THỨ TỰ TRANG -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+                <span>Tải ảnh lên & Kiểm soát thứ tự trang</span>
+              </h4>
+              <p class="text-xs text-slate-400 mt-0.5">Chọn nhiều ảnh chụp lẻ. Hệ thống tự động xếp thứ tự trang và cho phép bạn điều chỉnh vị trí.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="sortOcrQueueNatural()" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition flex items-center gap-1.5" title="Sắp xếp tên file theo thứ tự số tự nhiên (trang_1, trang_2...)">
+                <i class="fa-solid fa-arrow-down-1-9 text-blue-600"></i>
+                <span>Tự động xếp số A-Z</span>
+              </button>
+              <button onclick="clearOcrQueue()" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 font-medium rounded-lg transition flex items-center gap-1.5">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>Xóa hết</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Drag & drop upload box -->
+          <div onclick="document.getElementById('ocr-file-input').click()" 
+               ondragover="event.preventDefault()" 
+               ondrop="event.preventDefault(); handleOcrFiles(event.dataTransfer.files)" 
+               id="ocr-dropzone"
+               class="border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/40 rounded-2xl p-6 text-center cursor-pointer transition">
+            <input type="file" id="ocr-file-input" multiple accept="image/*" onchange="handleOcrFiles(this.files)" class="hidden">
+            <div class="flex flex-col items-center space-y-2">
+              <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl shadow-sm">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+              </div>
+              <p class="text-sm font-semibold text-slate-700">Kéo & Thả nhiều ảnh chụp văn bản vào đây, hoặc click để chọn</p>
+              <p class="text-xs text-slate-400">Hỗ trợ JPG, PNG, TIFF, BMP, WEBP (Tối ưu nhất với ảnh rõ nét, đủ sáng, góc chụp thẳng)</p>
+            </div>
+          </div>
+
+          <!-- Danh sách hàng đợi các trang ảnh (Queue Cards) -->
+          <div id="ocr-queue-container" class="hidden space-y-3">
+            <div class="flex items-center justify-between text-xs text-slate-500 font-semibold px-1">
+              <span>DANH SÁCH CÁC TRANG SẮP QUÉT (<span id="ocr-queue-count" class="text-blue-600 font-bold">0</span> trang):</span>
+              <span class="text-slate-400 font-normal">Dùng nút ▲/▼ để đổi vị trí trang nếu ảnh chụp bị lẫn lộn</span>
+            </div>
+            <div id="ocr-cards-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-1 border border-slate-100 rounded-xl bg-slate-50/50">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Toolbar bắt đầu quét -->
+            <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center space-x-3">
+                <label class="text-xs font-semibold text-slate-600">Ngôn ngữ:</label>
+                <select id="ocr-lang-select" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-white">
+                  <option value="vie" selected>Tiếng Việt (Có dấu đầy đủ)</option>
+                  <option value="eng">Tiếng Anh (English)</option>
+                </select>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <button onclick="startOcrBatchScan()" id="btn-start-ocr" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-500/20 transition flex items-center space-x-2">
+                  <i class="fa-solid fa-bolt"></i>
+                  <span>Bắt đầu Quét OCR</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div id="ocr-progress-box" class="hidden space-y-2 pt-2">
+              <div class="flex items-center justify-between text-xs">
+                <span id="ocr-progress-text" class="font-semibold text-blue-700">Đang khởi động tiến trình OCR...</span>
+                <span id="ocr-progress-pct" class="font-bold text-slate-700">0%</span>
+              </div>
+              <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                <div id="ocr-progress-fill" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BƯỚC 2: KHUNG TÀI LIỆU (RICH DOCUMENT VIEWER & IN-PLACE EDITOR) -->
+        <div id="ocr-result-section" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+                <span>Tài liệu sau khi Quét OCR (Xem trước & Chỉnh sửa trực tiếp)</span>
+              </h4>
+              <p class="text-xs text-slate-400 mt-0.5">Nội dung đã được ghép chuẩn xác theo đúng thứ tự trang. Bạn có thể sửa trực tiếp nội dung bên dưới trước khi xuất.</p>
+            </div>
+
+            <!-- Action Export Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="exportOcrToDocx()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2">
+                <i class="fa-solid fa-file-word text-sm"></i>
+                <span>Tải xuống File Word (.docx)</span>
+              </button>
+              <button onclick="copyOcrText(this)" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-regular fa-copy"></i>
+                <span>Sao chép tất cả</span>
+              </button>
+              <button onclick="downloadOcrTxt()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-file-lines"></i>
+                <span>Tải file .TXT</span>
+              </button>
+              <button onclick="printOcrDocument()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-print"></i>
+                <span>In / Xuất PDF</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Document stats & title bar -->
+          <div class="flex flex-wrap items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200 gap-3">
+            <div class="flex-1 min-w-[240px]">
+              <input type="text" id="ocr-doc-title" value="Tài liệu scan văn bản" placeholder="Nhập tiêu đề tài liệu khi xuất Word..." class="w-full px-3 py-1.5 text-xs font-bold border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div class="flex items-center space-x-4 text-xs text-slate-500">
+              <span>Số trang: <b id="ocr-stat-pages" class="text-slate-800">0</b></span>
+              <span>Tổng số từ: <b id="ocr-stat-words" class="text-blue-600">0</b></span>
+              <span>Tổng ký tự: <b id="ocr-stat-chars" class="text-slate-800">0</b></span>
+            </div>
+          </div>
+
+          <!-- Paper-like Document Viewer Container (Khung tài liệu mô phỏng khổ giấy in) -->
+          <div class="bg-slate-100 p-4 md:p-8 rounded-2xl border border-slate-200 max-h-[700px] overflow-y-auto">
+            <div id="ocr-pages-paper-view" class="max-w-3xl mx-auto space-y-6">
+              <!-- Rendered page by page like Word sheets -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- MODAL DUYỆT THƯ MỤC TRỰC QUAN TRÊN MÁY TÍNH -->
@@ -535,13 +706,17 @@
         'search': 'Tìm kiếm tài liệu siêu tốc (PDF & Word)',
         'catalog': 'Lập danh mục hồ sơ lưu trữ (Mẫu số 03)',
         'voice': 'AI Voice Studio (Microsoft Edge TTS)',
+        'ocr': 'Quét & Nhận dạng Văn bản OCR (In sẵn -> File Word)',
         'kpi': 'Hệ thống Quản lý & Đánh giá KPI Cán bộ'
       };
-      document.getElementById('top-title').innerText = titles[tabId];
+      if (titles[tabId]) {
+        document.getElementById('top-title').innerText = titles[tabId];
+      }
 
       if (tabId === 'search') loadScannedFiles();
       if (tabId === 'catalog' && catalogRows.length === 0) loadInitialCatalog();
       if (tabId === 'kpi') loadKpiData();
+      if (tabId === 'ocr') checkOcrStatus();
     }
 
     // TRÌNH DUYỆT THƯ MỤC TRỰC QUAN & HỘP THOẠI WINDOWS
@@ -1161,6 +1336,328 @@
           ghi_chu: 'Hoàn thành tốt nhiệm vụ được giao'
         })
       }).then(() => loadKpiData());
+    }
+
+    // ==========================================
+    // TAB OCR: SCAN & NHẬN DẠNG VĂN BẢN
+    // ==========================================
+    let ocrQueue = []; // array of { id, file, name, size, previewUrl }
+    let ocrResults = []; // array of { page_number, filename, text, word_count, char_count }
+
+    async function checkOcrStatus() {
+      try {
+        const res = await fetch('/api/ocr/status');
+        const st = await res.json();
+        const badge = document.getElementById('ocr-lang-badge');
+        if (st.available) {
+          badge.innerText = st.languages.join(' / ') || 'Tiếng Việt (vie)';
+        } else {
+          badge.innerText = 'Chưa cấu hình Tesseract';
+          badge.classList.add('text-red-400');
+        }
+      } catch (e) {
+        console.error('Lỗi kiểm tra OCR status:', e);
+      }
+    }
+
+    function handleOcrFiles(files) {
+      if (!files || files.length === 0) return;
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) continue;
+        const id = 'ocr_' + Math.random().toString(36).substr(2, 9);
+        const previewUrl = URL.createObjectURL(file);
+        ocrQueue.push({
+          id,
+          file,
+          name: file.name,
+          size: file.size,
+          previewUrl
+        });
+      }
+      renderOcrQueue();
+    }
+
+    // Natural sort: trang_1.jpg, trang_2.jpg ... trang_10.jpg
+    function sortOcrQueueNatural() {
+      const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+      ocrQueue.sort((a, b) => collator.compare(a.name, b.name));
+      renderOcrQueue();
+    }
+
+    function moveOcrItem(idx, direction) {
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= ocrQueue.length) return;
+      const temp = ocrQueue[idx];
+      ocrQueue[idx] = ocrQueue[targetIdx];
+      ocrQueue[targetIdx] = temp;
+      renderOcrQueue();
+    }
+
+    function removeOcrItem(idx) {
+      if (ocrQueue[idx]?.previewUrl) {
+        URL.revokeObjectURL(ocrQueue[idx].previewUrl);
+      }
+      ocrQueue.splice(idx, 1);
+      renderOcrQueue();
+    }
+
+    function clearOcrQueue() {
+      ocrQueue.forEach(item => {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
+      ocrQueue = [];
+      renderOcrQueue();
+    }
+
+    function renderOcrQueue() {
+      const container = document.getElementById('ocr-queue-container');
+      const countEl = document.getElementById('ocr-queue-count');
+      const listEl = document.getElementById('ocr-cards-list');
+
+      countEl.innerText = ocrQueue.length;
+      if (ocrQueue.length === 0) {
+        container.classList.add('hidden');
+        listEl.innerHTML = '';
+        return;
+      }
+      container.classList.remove('hidden');
+
+      listEl.innerHTML = ocrQueue.map((item, idx) => `
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-2 relative group hover:border-blue-300 transition">
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0">
+              ${idx + 1}
+            </span>
+            <div class="overflow-hidden">
+              <p class="text-xs font-semibold text-slate-800 truncate" title="${item.name}">${item.name}</p>
+              <p class="text-[10px] text-slate-400">${(item.size / 1024).toFixed(1)} KB</p>
+            </div>
+          </div>
+
+          <div class="w-full h-28 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center border border-slate-100">
+            <img src="${item.previewUrl}" class="max-h-full max-w-full object-contain" alt="Page ${idx + 1}">
+          </div>
+
+          <div class="flex items-center justify-between pt-1 border-t border-slate-100">
+            <div class="flex items-center space-x-1">
+              <button onclick="moveOcrItem(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed" title="Di chuyển lên trước">
+                <i class="fa-solid fa-chevron-up"></i>
+              </button>
+              <button onclick="moveOcrItem(${idx}, 1)" ${idx === ocrQueue.length - 1 ? 'disabled' : ''} class="w-7 h-7 rounded-lg border border-slate-200 flex items-center justify-center text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed" title="Di chuyển xuống sau">
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+            </div>
+            <button onclick="removeOcrItem(${idx})" class="w-7 h-7 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center text-xs" title="Xóa ảnh này">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function startOcrBatchScan() {
+      if (ocrQueue.length === 0) {
+        alert('Vui lòng chọn ít nhất 1 ảnh để quét OCR!');
+        return;
+      }
+
+      const btn = document.getElementById('btn-start-ocr');
+      const progressBox = document.getElementById('ocr-progress-box');
+      const progressText = document.getElementById('ocr-progress-text');
+      const progressFill = document.getElementById('ocr-progress-fill');
+      const progressPct = document.getElementById('ocr-progress-pct');
+      const lang = document.getElementById('ocr-lang-select').value;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Đang Quét OCR...</span>';
+      progressBox.classList.remove('hidden');
+
+      ocrResults = [];
+
+      const total = ocrQueue.length;
+      for (let i = 0; i < total; i++) {
+        const item = ocrQueue[i];
+        const pct = Math.round(((i) / total) * 100);
+        progressFill.style.width = pct + '%';
+        progressPct.innerText = pct + '%';
+        progressText.innerText = `Đang quét OCR trang ${i + 1}/${total}: ${item.name}...`;
+
+        const formData = new FormData();
+        formData.append('lang', lang);
+        formData.append('file_0', item.file, item.name);
+
+        try {
+          const res = await fetch('/api/ocr/scan-batch', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+          if (data && data.pages && data.pages.length > 0) {
+            const pageData = data.pages[0];
+            pageData.page_number = i + 1;
+            ocrResults.push(pageData);
+          }
+        } catch (e) {
+          console.error('Lỗi scan trang', i + 1, e);
+          ocrResults.push({
+            page_number: i + 1,
+            filename: item.name,
+            text: `[Lỗi quét trang: ${e.message}]`,
+            word_count: 0,
+            char_count: 0
+          });
+        }
+      }
+
+      progressFill.style.width = '100%';
+      progressPct.innerText = '100%';
+      progressText.innerText = 'Đã hoàn tất nhận dạng toàn bộ các trang!';
+
+      setTimeout(() => {
+        progressBox.classList.add('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-bolt"></i><span>Bắt đầu Quét OCR</span>';
+      }, 800);
+
+      renderOcrResults();
+    }
+
+    function renderOcrResults() {
+      const section = document.getElementById('ocr-result-section');
+      const paperView = document.getElementById('ocr-pages-paper-view');
+      if (ocrResults.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+      section.classList.remove('hidden');
+
+      let totalWords = 0;
+      let totalChars = 0;
+
+      paperView.innerHTML = ocrResults.map((page, idx) => {
+        totalWords += (page.word_count || 0);
+        totalChars += (page.char_count || 0);
+        return `
+          <div class="bg-white rounded-xl shadow-md border border-slate-300 p-6 md:p-8 space-y-3 relative font-serif">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 font-sans">
+              <span class="text-xs font-bold text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-regular fa-file-lines"></i>
+                Trang ${page.page_number} (${page.filename})
+              </span>
+              <span class="text-[11px] text-slate-400">
+                <span id="page-words-${idx}">${page.word_count || 0}</span> từ | 
+                <span id="page-chars-${idx}">${page.char_count || 0}</span> ký tự
+              </span>
+            </div>
+
+            <!-- In-place editable textarea -->
+            <textarea 
+              id="ocr-text-${idx}"
+              oninput="updatePageStats(${idx})"
+              rows="12"
+              class="w-full text-slate-800 text-sm leading-relaxed border-none focus:outline-none focus:ring-0 resize-y p-0 font-serif whitespace-pre-wrap"
+              placeholder="Nội dung trang scan...">${page.text || ''}</textarea>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('ocr-stat-pages').innerText = ocrResults.length;
+      document.getElementById('ocr-stat-words').innerText = totalWords.toLocaleString();
+      document.getElementById('ocr-stat-chars').innerText = totalChars.toLocaleString();
+
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updatePageStats(idx) {
+      const textarea = document.getElementById(`ocr-text-${idx}`);
+      const text = textarea.value;
+      if (ocrResults[idx]) {
+        ocrResults[idx].text = text;
+        const words = text.trim() ? text.trim().split(/\\s+/).length : 0;
+        const chars = text.length;
+        ocrResults[idx].word_count = words;
+        ocrResults[idx].char_count = chars;
+        document.getElementById(`page-words-${idx}`).innerText = words;
+        document.getElementById(`page-chars-${idx}`).innerText = chars;
+
+        let totalW = 0, totalC = 0;
+        ocrResults.forEach(p => { totalW += p.word_count; totalC += p.char_count; });
+        document.getElementById('ocr-stat-words').innerText = totalW.toLocaleString();
+        document.getElementById('ocr-stat-chars').innerText = totalC.toLocaleString();
+      }
+    }
+
+    async function exportOcrToDocx() {
+      if (ocrResults.length === 0) return;
+      const title = document.getElementById('ocr-doc-title').value || 'TÀI LIỆU SCAN OCR';
+      
+      ocrResults.forEach((p, idx) => {
+        const el = document.getElementById(`ocr-text-${idx}`);
+        if (el) p.text = el.value;
+      });
+
+      try {
+        const res = await fetch('/api/ocr/export-docx', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            pages: ocrResults
+          })
+        });
+        if (!res.ok) throw new Error('Lỗi xuất file Word');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const safeTitle = title.replace(/[^a-zA-Z0-9_\\-\\u00C0-\\u1EF9]/g, '_');
+        a.download = `${safeTitle}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('Lỗi tải file Word: ' + e.message);
+      }
+    }
+
+    function copyOcrText(btn) {
+      if (ocrResults.length === 0) return;
+      const allText = ocrResults.map((p, idx) => {
+        const el = document.getElementById(`ocr-text-${idx}`);
+        const t = el ? el.value : p.text;
+        return `--- TRANG ${p.page_number} (${p.filename}) ---\n${t}\n`;
+      }).join('\n');
+
+      navigator.clipboard.writeText(allText).then(() => {
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i><span class="text-emerald-600">Đã chép!</span>';
+        setTimeout(() => { btn.innerHTML = oldHtml; }, 1600);
+      });
+    }
+
+    function downloadOcrTxt() {
+      if (ocrResults.length === 0) return;
+      const title = document.getElementById('ocr-doc-title').value || 'TaiLieu_Scan';
+      const allText = ocrResults.map((p, idx) => {
+        const el = document.getElementById(`ocr-text-${idx}`);
+        const t = el ? el.value : p.text;
+        return `--- TRANG ${p.page_number} (${p.filename}) ---\n${t}\n`;
+      }).join('\n');
+
+      const blob = new Blob([allText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function printOcrDocument() {
+      window.print();
     }
 
     // Tự động tải danh sách ổ đĩa và danh sách file đã quét ban đầu khi mở app
