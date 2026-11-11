@@ -47,6 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/", get(index_handler))
         // API Chọn thư mục & Ổ đĩa
         .route("/api/pick-folder", get(pick_folder_handler))
+        .route("/api/browse-dir", get(browse_dir_handler))
         .route("/api/system-drives", get(get_system_drives_handler))
         // API Lập chỉ mục có tiến trình & nút dừng
         .route("/api/index/start", post(start_indexing_handler))
@@ -150,6 +151,72 @@ async fn get_system_drives_handler() -> Json<Vec<DriveItem>> {
     }
 
     Json(items)
+}
+
+#[derive(Deserialize)]
+struct BrowseDirReq {
+    path: Option<String>,
+}
+
+#[derive(Serialize)]
+struct DirEntryItem {
+    name: String,
+    path: String,
+}
+
+#[derive(Serialize)]
+struct BrowseDirRes {
+    current_path: String,
+    parent_path: Option<String>,
+    folders: Vec<DirEntryItem>,
+}
+
+/// Duyệt thư mục trực quan theo thời gian thực
+async fn browse_dir_handler(Query(params): Query<BrowseDirReq>) -> Json<BrowseDirRes> {
+    let current_path = params.path.unwrap_or_default().trim().to_string();
+
+    if current_path.is_empty() {
+        let drives = utils::get_system_drives();
+        let folders = drives
+            .into_iter()
+            .map(|d| DirEntryItem {
+                name: format!("Ổ đĩa {}", d),
+                path: d,
+            })
+            .collect();
+        return Json(BrowseDirRes {
+            current_path: "".into(),
+            parent_path: None,
+            folders,
+        });
+    }
+
+    let p = PathBuf::from(&current_path);
+    let parent_path = p.parent().map(|parent| parent.to_string_lossy().to_string());
+
+    let mut folders = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(&p) {
+        for entry in entries.flatten() {
+            if let Ok(ft) = entry.file_type() {
+                if ft.is_dir() {
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    if !name.starts_with('$') && !name.starts_with('.') && !is_ignored_dir(&name) {
+                        folders.push(DirEntryItem {
+                            name,
+                            path: entry.path().to_string_lossy().to_string(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    folders.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+
+    Json(BrowseDirRes {
+        current_path,
+        parent_path,
+        folders,
+    })
 }
 
 #[derive(Deserialize)]

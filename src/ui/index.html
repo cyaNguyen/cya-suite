@@ -89,7 +89,7 @@
           <div class="flex flex-col sm:flex-row gap-2.5">
             <div class="flex-1 flex gap-2">
               <input type="text" id="folder-path" placeholder="Nhập đường dẫn hoặc chọn ổ đĩa bên dưới..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono text-slate-700">
-              <button onclick="pickFolder()" id="btn-pick-folder" title="Mở hộp thoại chọn thư mục chuẩn Windows" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition flex items-center space-x-1.5 flex-shrink-0">
+              <button onclick="openDirModal()" id="btn-pick-folder" title="Mở trình duyệt thư mục máy tính" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-sm transition flex items-center space-x-1.5 flex-shrink-0">
                 <i class="fa-regular fa-folder-open text-blue-600"></i>
                 <span>Duyệt thư mục...</span>
               </button>
@@ -461,6 +461,63 @@
 
   </main>
 
+  <!-- MODAL DUYỆT THƯ MỤC TRỰC QUAN TRÊN MÁY TÍNH -->
+  <div id="dir-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full flex flex-col max-h-[85vh] overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm">
+            <i class="fa-solid fa-folder-open text-base"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-800 text-sm">Duyệt thư mục trên máy tính</h4>
+            <p class="text-[11px] text-slate-500">Bấm chọn thư mục hoặc dùng hộp thoại Windows</p>
+          </div>
+        </div>
+        <button onclick="closeDirModal()" class="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Current Path & Navigation -->
+      <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2 text-xs">
+        <button onclick="browseParentDir()" id="btn-dir-parent" title="Lên thư mục cha" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-slate-700 transition flex items-center space-x-1 flex-shrink-0 font-medium shadow-2xs">
+          <i class="fa-solid fa-arrow-up text-slate-500"></i>
+          <span>Lên</span>
+        </button>
+        <div id="dir-current-display" class="flex-1 font-mono text-slate-800 bg-white border border-slate-300 rounded-lg px-3 py-1.5 truncate text-xs shadow-2xs font-semibold">
+          (Đang nạp...)
+        </div>
+        <button onclick="pickWindowsNative()" title="Mở hộp thoại Windows chuẩn" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-blue-700 transition flex items-center space-x-1.5 flex-shrink-0 font-medium shadow-2xs">
+          <i class="fa-brands fa-windows text-blue-600"></i>
+          <span>Hộp thoại Windows</span>
+        </button>
+      </div>
+
+      <!-- Drive Shortcut Chips -->
+      <div class="px-4 py-2.5 bg-white border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs" id="modal-drive-chips">
+        <!-- Dynamic drive buttons -->
+      </div>
+
+      <!-- Folder List Body -->
+      <div id="dir-list-container" class="flex-1 overflow-y-auto p-3 space-y-1 min-h-[220px] max-h-[360px]">
+        <!-- Dynamic folders -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-3 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between">
+        <button onclick="closeDirModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-medium transition">
+          Hủy bỏ
+        </button>
+        <button onclick="confirmSelectedDir()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
+          <i class="fa-solid fa-check"></i>
+          <span>Chọn thư mục này</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let currentFilter = 'ALL';
     let progressTimer = null;
@@ -487,41 +544,114 @@
       if (tabId === 'kpi') loadKpiData();
     }
 
-    // TAB 1: DUYỆT THƯ MỤC NATIVE WINDOWS (FOREGROUND)
-    async function pickFolder() {
-      const btn = document.getElementById('btn-pick-folder');
-      const originalHtml = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-blue-600"></i><span>Đang mở...</span>';
+    // TRÌNH DUYỆT THƯ MỤC TRỰC QUAN & HỘP THOẠI WINDOWS
+    let modalCurrentPath = '';
+    let modalParentPath = null;
+
+    function openDirModal() {
+      const current = document.getElementById('folder-path').value.trim();
+      document.getElementById('dir-modal').classList.remove('hidden');
+      browseDir(current && current !== 'ALL' ? current : '');
+    }
+
+    function closeDirModal() {
+      document.getElementById('dir-modal').classList.add('hidden');
+    }
+
+    async function browseDir(path) {
+      const container = document.getElementById('dir-list-container');
+      container.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs"><i class="fa-solid fa-spinner fa-spin mr-1.5 text-blue-600"></i>Đang nạp danh sách thư mục...</div>';
+      try {
+        const res = await fetch('/api/browse-dir?path=' + encodeURIComponent(path));
+        const data = await res.json();
+        modalCurrentPath = data.current_path;
+        modalParentPath = data.parent_path;
+
+        document.getElementById('dir-current-display').innerText = modalCurrentPath || '(Tất cả ổ đĩa trên máy tính)';
+        document.getElementById('dir-current-display').title = modalCurrentPath;
+
+        const btnParent = document.getElementById('btn-dir-parent');
+        if (modalCurrentPath && modalCurrentPath.length > 0) {
+          btnParent.disabled = false;
+          btnParent.classList.remove('opacity-40', 'cursor-not-allowed');
+        } else {
+          btnParent.disabled = true;
+          btnParent.classList.add('opacity-40', 'cursor-not-allowed');
+        }
+
+        if (data.folders.length === 0) {
+          container.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">Thư mục trống hoặc không có thư mục con</div>';
+          return;
+        }
+
+        container.innerHTML = data.folders.map(f => `
+          <div onclick="browseDir('${escapeJs(f.path)}')" 
+               class="p-2.5 rounded-xl hover:bg-blue-50/80 cursor-pointer transition flex items-center justify-between group border border-transparent hover:border-blue-100">
+            <div class="flex items-center space-x-2.5 truncate">
+              <i class="fa-solid fa-folder text-amber-500 text-base"></i>
+              <span class="font-medium text-slate-700 group-hover:text-blue-600 truncate text-xs">${f.name}</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-300 group-hover:text-blue-500 transition"></i>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<div class="p-8 text-center text-red-500 text-xs">Lỗi duyệt thư mục: ${err}</div>`;
+      }
+    }
+
+    function browseParentDir() {
+      if (modalParentPath !== null && modalParentPath !== undefined) {
+        browseDir(modalParentPath);
+      } else {
+        browseDir('');
+      }
+    }
+
+    function confirmSelectedDir() {
+      if (modalCurrentPath) {
+        document.getElementById('folder-path').value = modalCurrentPath;
+      }
+      closeDirModal();
+    }
+
+    async function pickWindowsNative() {
       try {
         const res = await fetch('/api/pick-folder');
         const selected = await res.json();
         if (selected) {
           document.getElementById('folder-path').value = selected;
+          closeDirModal();
         }
       } catch (err) {
-        console.error('Lỗi chọn thư mục:', err);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
+        console.error('Lỗi hộp thoại Windows:', err);
       }
     }
 
     // TẢI DANH SÁCH Ổ ĐĨA & THƯ MỤC CÓ SẴN TRÊN MÁY
     async function loadDrives() {
       const container = document.getElementById('quick-drives');
-      if (!container) return;
+      const modalChips = document.getElementById('modal-drive-chips');
       try {
         const res = await fetch('/api/system-drives');
         const list = await res.json();
-        container.innerHTML = list.map(item => `
-          <button onclick="setFolderPath('${escapeJs(item.path)}')" 
-                  class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition flex items-center space-x-1 flex-shrink-0">
-            <span>${item.label}</span>
-          </button>
-        `).join('');
+        if (container) {
+          container.innerHTML = list.map(item => `
+            <button onclick="setFolderPath('${escapeJs(item.path)}')" 
+                    class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition flex items-center space-x-1 flex-shrink-0">
+              <span>${item.label}</span>
+            </button>
+          `).join('');
+        }
+        if (modalChips) {
+          modalChips.innerHTML = list.filter(item => item.path !== 'ALL').map(item => `
+            <button onclick="browseDir('${escapeJs(item.path)}')" 
+                    class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 whitespace-nowrap transition">
+              ${item.label}
+            </button>
+          `).join('');
+        }
       } catch (err) {
-        container.innerHTML = '<span class="text-xs text-slate-400">Không tải được danh sách ổ đĩa</span>';
+        if (container) container.innerHTML = '<span class="text-xs text-slate-400">Không tải được danh sách ổ đĩa</span>';
       }
     }
 

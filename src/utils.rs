@@ -75,29 +75,28 @@ pub fn get_system_drives() -> Vec<String> {
     drives
 }
 
-/// Mở cửa sổ chọn thư mục native Windows (ưu tiên TopMost Form, fallback rfd)
+/// Mở cửa sổ chọn thư mục native Windows
 pub fn pick_folder_native() -> Option<String> {
     #[cfg(target_os = "windows")]
     {
-        // Script PowerShell tạo TopMost Form để hộp thoại luôn nổi lên trên cùng (phía trước trình duyệt)
-        let ps_script = r#"
-            Add-Type -AssemblyName System.Windows.Forms
-            $form = New-Object System.Windows.Forms.Form
-            $form.TopMost = $true
-            $form.WindowState = [System.Windows.Forms.FormWindowState]::Minimized
-            $form.Show()
-            $form.Activate()
-            $f = New-Object System.Windows.Forms.FolderBrowserDialog
-            $f.Description = 'Chọn thư mục chứa tài liệu PDF & Word'
-            $f.ShowNewFolderButton = $true
-            $res = $f.ShowDialog($form)
-            $form.Dispose()
-            if ($res -eq [System.Windows.Forms.DialogResult]::OK) {
-                Write-Output $f.SelectedPath
-            }
-        "#;
+        // 1. Dùng Shell.Application.BrowseForFolder (Native Windows API, luôn nổi lên desktop HWND 0)
+        let ps_cmd = r#"$sh = New-Object -ComObject Shell.Application; $f = $sh.BrowseForFolder(0, 'Chọn thư mục chứa tài liệu', 81, 0); if ($f) { Write-Output $f.Self.Path }"#;
         if let Ok(out) = Command::new("powershell")
-            .args(["-NoProfile", "-Sta", "-Command", ps_script])
+            .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Sta", "-Command", ps_cmd])
+            .output()
+        {
+            if out.status.success() {
+                let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
+                if !s.is_empty() {
+                    return Some(s);
+                }
+            }
+        }
+
+        // 2. Fallback WinForms FolderBrowserDialog chuẩn
+        let ps_winforms = r#"[System.Reflection.Assembly]::LoadWithPartialName('System.windows.forms') | Out-Null; $f = New-Object System.Windows.Forms.FolderBrowserDialog; $f.AutoUpgradeEnabled = $true; $f.Description = 'Chọn thư mục chứa tài liệu'; if ($f.ShowDialog() -eq 'OK') { Write-Output $f.SelectedPath }"#;
+        if let Ok(out) = Command::new("powershell")
+            .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Sta", "-Command", ps_winforms])
             .output()
         {
             if out.status.success() {
@@ -109,9 +108,9 @@ pub fn pick_folder_native() -> Option<String> {
         }
     }
 
-    // Fallback qua rfd
+    // 3. Fallback qua rfd
     rfd::FileDialog::new()
-        .set_title("Chọn thư mục chứa tài liệu PDF và Word")
+        .set_title("Chọn thư mục chứa tài liệu")
         .pick_folder()
         .map(|p| p.to_string_lossy().to_string())
 }
