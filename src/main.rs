@@ -15,7 +15,11 @@ use axum::{
     Json, Router,
 };
 use chrono::Local;
-use search::{extract_text_from_docx, extract_text_from_pdf, get_scanned_files, search_documents, ScannedDoc, SearchResultItem};
+use search::{
+    extract_text_from_docx, extract_text_from_pdf, extract_text_from_plain_text,
+    extract_text_from_pptx, extract_text_from_xlsx, get_scanned_files, search_documents,
+    ScannedDoc, SearchResultItem,
+};
 use serde::{Deserialize, Serialize};
 use state::{AppState, IndexingStatus};
 use std::fs;
@@ -262,7 +266,16 @@ async fn start_indexing_handler(
                 if p.is_file() {
                     if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
                         let ext_lower = ext.to_lowercase();
-                        if ext_lower == "pdf" || ext_lower == "docx" {
+                        let (doc_type, is_supported) = match ext_lower.as_str() {
+                            "pdf" => ("PDF", true),
+                            "docx" => ("WORD", true),
+                            "xlsx" | "csv" => ("EXCEL", true),
+                            "pptx" => ("PPT", true),
+                            "txt" | "md" | "log" | "rtf" => ("TXT", true),
+                            _ => ("", false),
+                        };
+
+                        if is_supported {
                             let file_name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
                             let file_path_str = p.to_string_lossy().to_string();
 
@@ -275,7 +288,7 @@ async fn start_indexing_handler(
                             }
 
                             let now_str = Local::now().format("%d/%m/%Y %H:%M:%S").to_string();
-                            if ext_lower == "docx" {
+                            if doc_type == "WORD" {
                                 if let Ok(text) = extract_text_from_docx(p) {
                                     if !text.trim().is_empty() {
                                         let text_no_acc = remove_accents(&text);
@@ -292,7 +305,7 @@ async fn start_indexing_handler(
                                         );
                                     }
                                 }
-                            } else if ext_lower == "pdf" {
+                            } else if doc_type == "PDF" {
                                 if let Ok(pages) = extract_text_from_pdf(p) {
                                     if !pages.is_empty() {
                                         let conn = db_arc.lock().unwrap();
@@ -309,6 +322,64 @@ async fn start_indexing_handler(
                                                 rusqlite::params![file_path_str, file_name, "PDF", page_no, text, text_no_acc],
                                             );
                                         }
+                                    }
+                                }
+                            } else if doc_type == "PPT" {
+                                if let Ok(slides) = extract_text_from_pptx(p) {
+                                    if !slides.is_empty() {
+                                        let conn = db_arc.lock().unwrap();
+                                        let _ = conn.execute("DELETE FROM documents WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        let _ = conn.execute("DELETE FROM documents_fts WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        for (slide_no, text) in slides {
+                                            let text_no_acc = remove_accents(&text);
+                                            let _ = conn.execute(
+                                                "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                                                rusqlite::params![file_path_str, file_name, "PPT", slide_no, text, text_no_acc, now_str],
+                                            );
+                                            let _ = conn.execute(
+                                                "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                                                rusqlite::params![file_path_str, file_name, "PPT", slide_no, text, text_no_acc],
+                                            );
+                                        }
+                                    }
+                                }
+                            } else if doc_type == "EXCEL" {
+                                let text_res = if ext_lower == "csv" {
+                                    extract_text_from_plain_text(p)
+                                } else {
+                                    extract_text_from_xlsx(p)
+                                };
+                                if let Ok(text) = text_res {
+                                    if !text.trim().is_empty() {
+                                        let text_no_acc = remove_accents(&text);
+                                        let conn = db_arc.lock().unwrap();
+                                        let _ = conn.execute("DELETE FROM documents WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        let _ = conn.execute("DELETE FROM documents_fts WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        let _ = conn.execute(
+                                            "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                                            rusqlite::params![file_path_str, file_name, "EXCEL", 1, text, text_no_acc, now_str],
+                                        );
+                                        let _ = conn.execute(
+                                            "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                                            rusqlite::params![file_path_str, file_name, "EXCEL", 1, text, text_no_acc],
+                                        );
+                                    }
+                                }
+                            } else if doc_type == "TXT" {
+                                if let Ok(text) = extract_text_from_plain_text(p) {
+                                    if !text.trim().is_empty() {
+                                        let text_no_acc = remove_accents(&text);
+                                        let conn = db_arc.lock().unwrap();
+                                        let _ = conn.execute("DELETE FROM documents WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        let _ = conn.execute("DELETE FROM documents_fts WHERE file_path = ?1", rusqlite::params![file_path_str]);
+                                        let _ = conn.execute(
+                                            "INSERT INTO documents (file_path, file_name, file_type, page_number, content, content_no_accent, indexed_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                                            rusqlite::params![file_path_str, file_name, "TXT", 1, text, text_no_acc, now_str],
+                                        );
+                                        let _ = conn.execute(
+                                            "INSERT INTO documents_fts (file_path, file_name, file_type, page_number, content, content_no_accent) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                                            rusqlite::params![file_path_str, file_name, "TXT", 1, text, text_no_acc],
+                                        );
                                     }
                                 }
                             }

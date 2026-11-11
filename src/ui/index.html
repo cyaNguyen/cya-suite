@@ -137,13 +137,89 @@
 
         <!-- Tìm kiếm nội dung trực tiếp (Typing đến đâu khớp đến đó) -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wider">2. Tìm kiếm nội dung văn bản</h3>
-            <!-- Bộ lọc định dạng file -->
-            <div class="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl">
-              <button onclick="setFilter('ALL')" id="filter-all" class="filter-btn active px-3 py-1 rounded-lg text-xs font-medium transition">Tất cả</button>
-              <button onclick="setFilter('PDF')" id="filter-pdf" class="filter-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition">📄 PDF</button>
-              <button onclick="setFilter('WORD')" id="filter-word" class="filter-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 transition">📝 Word (.docx)</button>
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            <h3 class="text-sm font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <span>2. Tìm kiếm nội dung văn bản</span>
+            </h3>
+
+            <!-- Bộ lọc định dạng file: Icon phễu + Slide lướt nhiều thể loại -->
+            <div class="relative flex items-center space-x-2">
+              <!-- Nút icon cái phễu -->
+              <button onclick="toggleFilterMenu(event)" id="btn-filter-funnel" title="Mở danh mục phân loại định dạng file" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-xs transition flex items-center space-x-1.5 border border-slate-200 flex-shrink-0 shadow-sm">
+                <i class="fa-solid fa-filter text-blue-600"></i>
+                <span>Lọc định dạng</span>
+                <span id="filter-count-badge" class="hidden px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-600 text-white">0</span>
+                <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+              </button>
+
+              <!-- Slide ngang các thể loại file thông dụng -->
+              <div class="flex items-center space-x-1.5 overflow-x-auto scrollbar-none py-1 max-w-sm sm:max-w-md lg:max-w-lg">
+                <button onclick="setQuickFilter('ALL')" id="filter-all" class="filter-btn active px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition">Tất cả</button>
+                <button onclick="setQuickFilter('PDF')" id="filter-pdf" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 whitespace-nowrap transition">📄 PDF</button>
+                <button onclick="setQuickFilter('WORD')" id="filter-word" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 whitespace-nowrap transition">📝 Word (.docx)</button>
+                <button onclick="setQuickFilter('EXCEL')" id="filter-excel" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 whitespace-nowrap transition">📊 Excel (.xlsx, .csv)</button>
+                <button onclick="setQuickFilter('PPT')" id="filter-ppt" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 whitespace-nowrap transition">📽️ PowerPoint (.pptx)</button>
+                <button onclick="setQuickFilter('TXT')" id="filter-txt" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 whitespace-nowrap transition">📃 Văn bản (.txt, .md)</button>
+              </div>
+
+              <!-- Menu Popover phân loại chi tiết (khi bấm icon cái phễu) -->
+              <div id="filter-popover" class="hidden absolute right-0 top-10 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50">
+                <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
+                  <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-filter text-blue-600"></i> Phân loại định dạng tài liệu
+                  </span>
+                  <button onclick="selectAllFilters(true)" class="text-[11px] text-blue-600 hover:underline font-medium">Chọn hết</button>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                  <!-- Mục 1: Văn bản -->
+                  <div>
+                    <span class="font-semibold text-slate-500 text-[11px] uppercase tracking-wider block mb-1.5">📄 Tài liệu & Văn bản</span>
+                    <div class="space-y-1.5 pl-1">
+                      <label class="flex items-center space-x-2 text-slate-700 cursor-pointer hover:text-blue-600">
+                        <input type="checkbox" value="PDF" class="filter-checkbox rounded text-blue-600 focus:ring-blue-500" onchange="syncCheckboxToState()">
+                        <span class="font-medium">PDF Documents (.pdf)</span>
+                      </label>
+                      <label class="flex items-center space-x-2 text-slate-700 cursor-pointer hover:text-blue-600">
+                        <input type="checkbox" value="WORD" class="filter-checkbox rounded text-blue-600 focus:ring-blue-500" onchange="syncCheckboxToState()">
+                        <span class="font-medium">Microsoft Word (.docx)</span>
+                      </label>
+                      <label class="flex items-center space-x-2 text-slate-700 cursor-pointer hover:text-blue-600">
+                        <input type="checkbox" value="TXT" class="filter-checkbox rounded text-blue-600 focus:ring-blue-500" onchange="syncCheckboxToState()">
+                        <span class="font-medium">Văn bản thuần (.txt, .md, .log, .rtf)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Mục 2: Bảng tính -->
+                  <div class="border-t border-slate-100 pt-2">
+                    <span class="font-semibold text-slate-500 text-[11px] uppercase tracking-wider block mb-1.5">📊 Bảng tính & Số liệu</span>
+                    <div class="space-y-1.5 pl-1">
+                      <label class="flex items-center space-x-2 text-slate-700 cursor-pointer hover:text-blue-600">
+                        <input type="checkbox" value="EXCEL" class="filter-checkbox rounded text-blue-600 focus:ring-blue-500" onchange="syncCheckboxToState()">
+                        <span class="font-medium">Excel Spreadsheet & CSV (.xlsx, .csv)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Mục 3: Trình chiếu -->
+                  <div class="border-t border-slate-100 pt-2">
+                    <span class="font-semibold text-slate-500 text-[11px] uppercase tracking-wider block mb-1.5">📽️ Trình chiếu PowerPoint</span>
+                    <div class="space-y-1.5 pl-1">
+                      <label class="flex items-center space-x-2 text-slate-700 cursor-pointer hover:text-blue-600">
+                        <input type="checkbox" value="PPT" class="filter-checkbox rounded text-blue-600 focus:ring-blue-500" onchange="syncCheckboxToState()">
+                        <span class="font-medium">PowerPoint Slides (.pptx)</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Chân popover -->
+                <div class="flex items-center justify-between pt-3 border-t border-slate-100 mt-3 text-xs">
+                  <button onclick="selectAllFilters(false)" class="text-slate-400 hover:text-slate-600 font-medium">Bỏ chọn</button>
+                  <button onclick="applyCheckboxFilters()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-sm transition">Áp dụng</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -529,15 +605,105 @@
       document.getElementById('btn-stop').classList.add('hidden');
     }
 
-    // BỘ LỌC ĐỊNH DẠNG FILE
-    function setFilter(type) {
+    // BỘ LỌC ĐỊNH DẠNG FILE & MENU PHỄU
+    let currentFilter = 'ALL';
+
+    function getDocTypeBadge(type) {
+      switch (type) {
+        case 'PDF':
+          return { icon: 'fa-solid fa-file-pdf text-red-500', badge: 'bg-red-100 text-red-700', label: 'PDF' };
+        case 'WORD':
+          return { icon: 'fa-solid fa-file-word text-blue-600', badge: 'bg-blue-100 text-blue-700', label: 'Word' };
+        case 'EXCEL':
+          return { icon: 'fa-solid fa-file-excel text-emerald-600', badge: 'bg-emerald-100 text-emerald-700', label: 'Excel' };
+        case 'PPT':
+          return { icon: 'fa-solid fa-file-powerpoint text-amber-600', badge: 'bg-amber-100 text-amber-700', label: 'PowerPoint' };
+        case 'TXT':
+          return { icon: 'fa-solid fa-file-lines text-slate-600', badge: 'bg-slate-100 text-slate-700', label: 'Văn bản' };
+        default:
+          return { icon: 'fa-solid fa-file text-slate-500', badge: 'bg-slate-100 text-slate-700', label: type };
+      }
+    }
+
+    function toggleFilterMenu(e) {
+      e.stopPropagation();
+      const popover = document.getElementById('filter-popover');
+      popover.classList.toggle('hidden');
+    }
+
+    function closeFilterMenu() {
+      const popover = document.getElementById('filter-popover');
+      if (popover) popover.classList.add('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      const popover = document.getElementById('filter-popover');
+      const btn = document.getElementById('btn-filter-funnel');
+      if (popover && !popover.contains(e.target) && !btn.contains(e.target)) {
+        closeFilterMenu();
+      }
+    });
+
+    function setQuickFilter(type) {
       currentFilter = type;
       document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'bg-blue-600', 'text-white'));
       const activeBtn = document.getElementById('filter-' + type.toLowerCase());
       if (activeBtn) activeBtn.classList.add('active', 'bg-blue-600', 'text-white');
-      
+
+      document.querySelectorAll('.filter-checkbox').forEach(cb => {
+        if (type === 'ALL') {
+          cb.checked = false;
+        } else {
+          cb.checked = (cb.value === type);
+        }
+      });
+
+      updateFilterBadge();
       doSearch();
       loadScannedFiles();
+    }
+
+    function selectAllFilters(checked) {
+      document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = checked);
+    }
+
+    function syncCheckboxToState() {
+      // Do not close immediately, user can select multiple
+    }
+
+    function applyCheckboxFilters() {
+      const checked = Array.from(document.querySelectorAll('.filter-checkbox:checked')).map(cb => cb.value);
+      if (checked.length === 0 || checked.length === 5) {
+        currentFilter = 'ALL';
+      } else {
+        currentFilter = checked.join(',');
+      }
+
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'bg-blue-600', 'text-white'));
+      if (currentFilter === 'ALL') {
+        document.getElementById('filter-all').classList.add('active', 'bg-blue-600', 'text-white');
+      } else if (checked.length === 1) {
+        const singleBtn = document.getElementById('filter-' + checked[0].toLowerCase());
+        if (singleBtn) singleBtn.classList.add('active', 'bg-blue-600', 'text-white');
+      }
+
+      updateFilterBadge();
+      closeFilterMenu();
+      doSearch();
+      loadScannedFiles();
+    }
+
+    function updateFilterBadge() {
+      const badge = document.getElementById('filter-count-badge');
+      const checked = Array.from(document.querySelectorAll('.filter-checkbox:checked'));
+      if (checked.length > 0 && currentFilter !== 'ALL') {
+        badge.innerText = checked.length;
+        badge.classList.remove('hidden');
+        document.getElementById('btn-filter-funnel').classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
+      } else {
+        badge.classList.add('hidden');
+        document.getElementById('btn-filter-funnel').classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
+      }
     }
 
     // TÌM KIẾM THEO THỜI GIAN THỰC (TYPING ĐẾN ĐÂU TỰ TÌM ĐẾN ĐÓ)
@@ -559,54 +725,64 @@
       }
 
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&file_type=${currentFilter}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&file_type=${encodeURIComponent(currentFilter)}`);
         const items = await res.json();
-        document.getElementById('search-summary').innerText = `Tìm thấy ${items.length} kết quả phù hợp (${currentFilter === 'ALL' ? 'Tất cả' : currentFilter})`;
+        const filterLabel = currentFilter === 'ALL' ? 'Tất cả' : currentFilter;
+        document.getElementById('search-summary').innerText = `Tìm thấy ${items.length} kết quả phù hợp (${filterLabel})`;
 
         if (items.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">Không tìm thấy tài liệu phù hợp từ khóa</td></tr>';
           return;
         }
 
-        tbody.innerHTML = items.map(item => `
-          <tr class="hover:bg-slate-50/80 transition">
-            <td class="p-3">
-              <div class="space-y-1">
-                <div class="flex items-center space-x-1.5 flex-wrap">
-                  <i class="${item.file_type === 'PDF' ? 'fa-solid fa-file-pdf text-red-500' : 'fa-solid fa-file-word text-blue-500'} flex-shrink-0"></i>
-                  <a href="javascript:void(0)" onclick="openFile('${encodeURIComponent(item.file_path)}')" 
-                     title="Bấm để mở file trực tiếp" 
-                     class="font-semibold text-blue-600 hover:text-blue-800 hover:underline break-all">
-                    ${item.file_name}
-                  </a>
-                  <span class="text-slate-400 font-normal">/</span>
-                  <span class="text-xs text-slate-500 font-mono break-all" title="${item.file_path}">${item.file_path}</span>
+        tbody.innerHTML = items.map(item => {
+          const meta = getDocTypeBadge(item.file_type);
+          const pageLabel = item.file_type === 'PPT' 
+            ? `Slide ${item.page_number}` 
+            : item.file_type === 'EXCEL' 
+              ? 'Bảng tính' 
+              : `Trang ${item.page_number}`;
+
+          return `
+            <tr class="hover:bg-slate-50/80 transition">
+              <td class="p-3">
+                <div class="space-y-1">
+                  <div class="flex items-center space-x-1.5 flex-wrap">
+                    <i class="${meta.icon} flex-shrink-0"></i>
+                    <a href="javascript:void(0)" onclick="openFile('${encodeURIComponent(item.file_path)}')" 
+                       title="Bấm để mở file trực tiếp" 
+                       class="font-semibold text-blue-600 hover:text-blue-800 hover:underline break-all">
+                      ${item.file_name}
+                    </a>
+                    <span class="text-slate-400 font-normal">/</span>
+                    <span class="text-xs text-slate-500 font-mono break-all" title="${item.file_path}">${item.file_path}</span>
+                  </div>
+                  <div class="flex items-center space-x-2 text-xs pt-0.5">
+                    <button onclick="copyToClipboard('${escapeJs(item.file_path)}', this)" 
+                            class="text-slate-500 hover:text-blue-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
+                      <i class="fa-regular fa-copy"></i>
+                      <span>Copy path</span>
+                    </button>
+                    <button onclick="openFolder('${encodeURIComponent(item.file_path)}')" 
+                            class="text-slate-500 hover:text-amber-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
+                      <i class="fa-regular fa-folder-open"></i>
+                      <span>Mở thư mục</span>
+                    </button>
+                  </div>
                 </div>
-                <div class="flex items-center space-x-2 text-xs pt-0.5">
-                  <button onclick="copyToClipboard('${escapeJs(item.file_path)}', this)" 
-                          class="text-slate-500 hover:text-blue-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
-                    <i class="fa-regular fa-copy"></i>
-                    <span>Copy path</span>
-                  </button>
-                  <button onclick="openFolder('${encodeURIComponent(item.file_path)}')" 
-                          class="text-slate-500 hover:text-amber-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
-                    <i class="fa-regular fa-folder-open"></i>
-                    <span>Mở thư mục</span>
-                  </button>
+              </td>
+              <td class="p-3 text-center align-top"><span class="px-2 py-0.5 rounded text-xs font-semibold ${meta.badge}">${meta.label}</span></td>
+              <td class="p-3 text-center align-top text-slate-500 font-medium whitespace-nowrap">${pageLabel}</td>
+              <td class="p-3 align-top text-slate-600 text-xs leading-relaxed">${item.snippet}</td>
+              <td class="p-3 text-center align-top">
+                <div class="flex flex-col space-y-1">
+                  <button onclick="openFile('${encodeURIComponent(item.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
+                  <button onclick="openFolder('${encodeURIComponent(item.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-medium transition">Mở folder</button>
                 </div>
-              </div>
-            </td>
-            <td class="p-3 text-center align-top"><span class="px-2 py-0.5 rounded text-xs font-semibold ${item.file_type === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${item.file_type}</span></td>
-            <td class="p-3 text-center align-top text-slate-500 font-medium">${item.page_number}</td>
-            <td class="p-3 align-top text-slate-600 text-xs leading-relaxed">${item.snippet}</td>
-            <td class="p-3 text-center align-top">
-              <div class="flex flex-col space-y-1">
-                <button onclick="openFile('${encodeURIComponent(item.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
-                <button onclick="openFolder('${encodeURIComponent(item.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-medium transition">Mở folder</button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Lỗi tìm kiếm: ${err}</td></tr>`;
       }
@@ -615,54 +791,63 @@
     // TẢI DANH SÁCH TOÀN BỘ CÁC FILE ĐÃ QUÉT
     async function loadScannedFiles() {
       try {
-        const res = await fetch(`/api/scanned-files?file_type=${currentFilter}`);
+        const res = await fetch(`/api/scanned-files?file_type=${encodeURIComponent(currentFilter)}`);
         const docs = await res.json();
         document.getElementById('scanned-count-badge').innerText = docs.length;
 
         const tbody = document.getElementById('scanned-files-body');
         if (docs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Chưa có tài liệu nào phù hợp. Vui lòng chọn vị trí và bấm Bắt đầu quét.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">Chưa có tài liệu nào phù hợp bộ lọc. Vui lòng chọn vị trí và bấm Bắt đầu quét.</td></tr>';
           return;
         }
 
-        tbody.innerHTML = docs.map(d => `
-          <tr class="hover:bg-slate-50/80 transition">
-            <td class="p-3">
-              <div class="space-y-1">
-                <div class="flex items-center space-x-1.5 flex-wrap">
-                  <i class="${d.file_type === 'PDF' ? 'fa-solid fa-file-pdf text-red-500' : 'fa-solid fa-file-word text-blue-500'} flex-shrink-0"></i>
-                  <a href="javascript:void(0)" onclick="openFile('${encodeURIComponent(d.file_path)}')" 
-                     title="Bấm để mở file trực tiếp" 
-                     class="font-semibold text-blue-600 hover:text-blue-800 hover:underline break-all">
-                    ${d.file_name}
-                  </a>
-                  <span class="text-slate-400 font-normal">/</span>
-                  <span class="text-xs text-slate-500 font-mono break-all" title="${d.file_path}">${d.file_path}</span>
+        tbody.innerHTML = docs.map(d => {
+          const meta = getDocTypeBadge(d.file_type);
+          const totalLabel = d.file_type === 'PPT' 
+            ? `${d.total_pages} slide` 
+            : d.file_type === 'EXCEL' 
+              ? 'Bảng tính' 
+              : `${d.total_pages} trang`;
+
+          return `
+            <tr class="hover:bg-slate-50/80 transition">
+              <td class="p-3">
+                <div class="space-y-1">
+                  <div class="flex items-center space-x-1.5 flex-wrap">
+                    <i class="${meta.icon} flex-shrink-0"></i>
+                    <a href="javascript:void(0)" onclick="openFile('${encodeURIComponent(d.file_path)}')" 
+                       title="Bấm để mở file trực tiếp" 
+                       class="font-semibold text-blue-600 hover:text-blue-800 hover:underline break-all">
+                      ${d.file_name}
+                    </a>
+                    <span class="text-slate-400 font-normal">/</span>
+                    <span class="text-xs text-slate-500 font-mono break-all" title="${d.file_path}">${d.file_path}</span>
+                  </div>
+                  <div class="flex items-center space-x-2 text-xs pt-0.5">
+                    <button onclick="copyToClipboard('${escapeJs(d.file_path)}', this)" 
+                            class="text-slate-500 hover:text-blue-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
+                      <i class="fa-regular fa-copy"></i>
+                      <span>Copy path</span>
+                    </button>
+                    <button onclick="openFolder('${encodeURIComponent(d.file_path)}')" 
+                            class="text-slate-500 hover:text-amber-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
+                      <i class="fa-regular fa-folder-open"></i>
+                      <span>Mở thư mục</span>
+                    </button>
+                  </div>
                 </div>
-                <div class="flex items-center space-x-2 text-xs pt-0.5">
-                  <button onclick="copyToClipboard('${escapeJs(d.file_path)}', this)" 
-                          class="text-slate-500 hover:text-blue-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
-                    <i class="fa-regular fa-copy"></i>
-                    <span>Copy path</span>
-                  </button>
-                  <button onclick="openFolder('${encodeURIComponent(d.file_path)}')" 
-                          class="text-slate-500 hover:text-amber-600 flex items-center space-x-1 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 rounded text-[11px] transition">
-                    <i class="fa-regular fa-folder-open"></i>
-                    <span>Mở thư mục</span>
-                  </button>
+              </td>
+              <td class="p-3 text-center align-top"><span class="px-2 py-0.5 rounded text-xs font-semibold ${meta.badge}">${meta.label}</span></td>
+              <td class="p-3 text-center align-top font-medium text-slate-600 whitespace-nowrap">${totalLabel}</td>
+              <td class="p-3 text-center align-top">
+                <div class="flex flex-col space-y-1">
+                  <button onclick="openFile('${encodeURIComponent(d.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
+                  <button onclick="openFolder('${encodeURIComponent(d.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-medium transition">Mở folder</button>
                 </div>
-              </div>
-            </td>
-            <td class="p-3 text-center align-top"><span class="px-2 py-0.5 rounded text-xs font-semibold ${d.file_type === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${d.file_type}</span></td>
-            <td class="p-3 text-center align-top font-medium text-slate-600">${d.total_pages}</td>
-            <td class="p-3 text-center align-top">
-              <div class="flex flex-col space-y-1">
-                <button onclick="openFile('${encodeURIComponent(d.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-medium transition">Mở file</button>
-                <button onclick="openFolder('${encodeURIComponent(d.file_path)}')" class="px-2.5 py-1 bg-slate-100 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-medium transition">Mở folder</button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (err) {
         console.error(err);
       }
