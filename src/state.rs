@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use serde::Serialize;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Serialize, Default)]
@@ -20,6 +20,7 @@ pub struct AppState {
     pub data_dir: PathBuf,
     pub indexing_status: Arc<Mutex<IndexingStatus>>,
     pub stop_flag: Arc<AtomicBool>,
+    pub last_heartbeat: Arc<AtomicI64>,
 }
 
 impl AppState {
@@ -29,6 +30,7 @@ impl AppState {
             data_dir,
             indexing_status: Arc::new(Mutex::new(IndexingStatus::default())),
             stop_flag: Arc::new(AtomicBool::new(false)),
+            last_heartbeat: Arc::new(AtomicI64::new(0)),
         }
     }
 }

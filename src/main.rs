@@ -80,9 +80,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // API Soạn thảo & Biểu mẫu Văn bản Hành chính (Nghị định 30/2020/NĐ-CP)
         .route("/api/admin-doc/templates", get(get_admin_doc_templates_handler))
         .route("/api/admin-doc/export-docx", post(export_admin_docx_handler))
+        // API Quản lý Tài nguyên & Hệ thống (Heartbeat, Auto-Kill Task & Thoát Ứng dụng)
+        .route("/api/system/heartbeat", post(heartbeat_handler))
+        .route("/api/system/shutdown", post(shutdown_handler))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
-        .with_state(shared_state);
+        .with_state(shared_state.clone());
 
     let port = 8080;
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
@@ -95,6 +98,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  -> Đang tự động mở trình duyệt...");
 
     let _ = webbrowser::open(&url);
+
+    // Watchdog Task: Tự động phát hiện khi đóng toàn bộ tab trình duyệt (sau 15s không có heartbeat)
+    // Tự động dừng mọi tác vụ quét nền và thoát hoàn toàn tiến trình để giải phóng 100% RAM & CPU
+    let watchdog_state = shared_state.clone();
+    tokio::spawn(async move {
+        // Chờ 30 giây đầu cho trình duyệt khởi động và nạp trang
+        tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+        loop {
+            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+            let last = watchdog_state.last_heartbeat.load(Ordering::SeqCst);
+            if last > 0 {
+                let now = chrono::Utc::now().timestamp();
+                if now - last > 15 {
+                    println!("  -> [WATCHDOG] Phát hiện tất cả tab trình duyệt đã đóng (Timeout > 15s).");
+                    println!("  -> Đang dừng tiến trình quét và giải phóng toàn bộ tài nguyên máy tính...");
+                    watchdog_state.stop_flag.store(true, Ordering::SeqCst);
+                    tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+                    std::process::exit(0);
+                }
+            }
+        }
+    });
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
@@ -926,5 +951,37 @@ async fn export_admin_docx_handler(
             .into_response(),
     }
 }
+
+// ==========================================
+// API QUẢN LÝ TIẾN TRÌNH & GIẢI PHÓNG PHẦN CỨNG
+// ==========================================
+
+async fn heartbeat_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    let now = chrono::Utc::now().timestamp();
+    state.last_heartbeat.store(now, Ordering::SeqCst);
+    Json(serde_json::json!({ "status": "ok", "timestamp": now }))
+}
+
+async fn shutdown_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    println!("  -> Nhận yêu cầu thoát ứng dụng. Đang dừng các tác vụ nền...");
+    state.stop_flag.store(true, Ordering::SeqCst);
+    if let Ok(mut status) = state.indexing_status.lock() {
+        status.stopped = true;
+        status.is_running = false;
+        status.message = "Đã dừng tiến trình để thoát ứng dụng".into();
+    }
+
+    tokio::spawn(async {
+        tokio::time::sleep(tokio::time::Duration::from_millis(300)).await;
+        println!("  -> Đã giải phóng toàn bộ RAM, CPU và đóng tiến trình thành công.");
+        std::process::exit(0);
+    });
+
+    Json(serde_json::json!({
+        "status": "shutting_down",
+        "message": "Đang tắt ứng dụng và giải phóng toàn bộ tài nguyên"
+    }))
+}
+
 
 
