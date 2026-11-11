@@ -1,3 +1,4 @@
+mod admin_doc;
 mod catalog;
 mod db;
 mod kpi;
@@ -76,6 +77,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/ocr/status", get(ocr_status_handler))
         .route("/api/ocr/scan-batch", post(ocr_scan_batch_handler))
         .route("/api/ocr/export-docx", post(ocr_export_docx_handler))
+        // API Soạn thảo & Biểu mẫu Văn bản Hành chính (Nghị định 30/2020/NĐ-CP)
+        .route("/api/admin-doc/templates", get(get_admin_doc_templates_handler))
+        .route("/api/admin-doc/export-docx", post(export_admin_docx_handler))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(shared_state);
@@ -887,4 +891,40 @@ async fn ocr_export_docx_handler(
             .into_response(),
     }
 }
+
+// ==========================================
+// API BIỂU MẪU VĂN BẢN HÀNH CHÍNH (NĐ 30/2020)
+// ==========================================
+
+async fn get_admin_doc_templates_handler() -> impl IntoResponse {
+    Json(admin_doc::get_templates())
+}
+
+async fn export_admin_docx_handler(
+    Json(payload): Json<admin_doc::ExportAdminDocRequest>,
+) -> impl IntoResponse {
+    match admin_doc::generate_admin_docx(&payload.template_id, &payload.fields) {
+        Ok(bytes) => {
+            let filename = format!("VanBan_{}.docx", payload.template_id);
+            let disposition = format!("attachment; filename=\"{}\"", filename);
+            let mut headers = axum::http::HeaderMap::new();
+            headers.insert(
+                header::CONTENT_TYPE,
+                axum::http::HeaderValue::from_static(
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ),
+            );
+            if let Ok(val) = axum::http::HeaderValue::from_str(&disposition) {
+                headers.insert(header::CONTENT_DISPOSITION, val);
+            }
+            (headers, bytes).into_response()
+        }
+        Err(err) => (
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Lỗi xuất văn bản hành chính: {}", err),
+        )
+            .into_response(),
+    }
+}
+
 

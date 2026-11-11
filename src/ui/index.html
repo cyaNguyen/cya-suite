@@ -55,6 +55,11 @@
           <span>Scan OCR Văn bản</span>
         </button>
 
+        <button onclick="switchTab('admin-doc')" id="nav-admin-doc" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-slate-800">
+          <i class="fa-solid fa-stamp w-5 text-center"></i>
+          <span>Văn bản Hành chính (NĐ 30)</span>
+        </button>
+
         <button onclick="switchTab('kpi')" id="nav-kpi" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition duration-150 hover:bg-slate-800">
           <i class="fa-solid fa-chart-pie w-5 text-center"></i>
           <span>Đánh giá & KPI</span>
@@ -630,6 +635,254 @@
       </div>
     </section>
 
+    <!-- TAB 6: VĂN BẢN HÀNH CHÍNH (NGHỊ ĐỊNH 30/2020/NĐ-CP) -->
+    <section id="tab-admin-doc" class="tab-content flex-1 overflow-y-auto p-8">
+      <div class="max-w-7xl mx-auto space-y-6">
+
+        <!-- Top Banner Header -->
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 rounded-2xl p-6 text-white shadow-md flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="space-y-1.5">
+            <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                <i class="fa-solid fa-scale-balanced text-amber-400"></i>
+                Quy chuẩn Nghị định 30/2020/NĐ-CP
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                9 Mẫu Thể thức Nhà nước
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Xuất Word (.docx) Chuẩn Khổ A4
+              </span>
+            </div>
+            <h3 class="text-lg font-bold text-white">Soạn thảo & Xử lý Văn bản Hành chính Chuẩn Thể thức Nhà nước</h3>
+            <p class="text-xs text-slate-300 max-w-3xl leading-relaxed">
+              Tích hợp sẵn 9 biểu mẫu văn bản hành chính theo Phụ lục III Nghị định 30/2020/NĐ-CP của Chính phủ. Tự động định dạng khổ A4 (lề trên 20mm, lề dưới 20mm, lề trái 30mm, lề phải 15mm), bảng tiêu ngữ 2 ô không viền, phông chữ Times New Roman và giãn dòng 1.15. Xem trước trực quan và tải về file Word (.docx) dùng được ngay.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="exportCurrentAdminDocx()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow flex items-center space-x-2 flex-shrink-0">
+              <i class="fa-solid fa-file-word text-sm"></i>
+              <span>Xuất File Word (.docx)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. BỘ LỌC & DANH SÁCH 9 MẪU VĂN BẢN CHUẨN -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-list-check text-blue-600"></i>
+              <h4 class="text-sm font-bold text-slate-800">1. Chọn Mẫu Văn bản Hành chính</h4>
+            </div>
+            <!-- Category Pills -->
+            <div id="admin-doc-cats" class="flex items-center gap-1.5 flex-wrap text-xs">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Template Cards Carousel / Grid -->
+          <div id="admin-doc-templates-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- 2. KHU VỰC LÀM VIỆC: BIỂU MẪU NHẬP LIỆU (TRÁI) & XEM TRƯỚC KHỔ GIẤY A4 (PHẢI) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- CỘT TRÁI: FORM BIỂU MẪU DỮ LIỆU (5 COLS) -->
+          <div class="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 sticky top-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <i class="fa-solid fa-pen-to-square text-blue-600"></i>
+                  <span>Thông tin & Thuộc tính Văn bản</span>
+                </h4>
+                <p id="adm-selected-ref" class="text-[11px] text-amber-700 font-medium mt-0.5">Mẫu số 01.1 Phụ lục III NĐ 30/2020/NĐ-CP</p>
+              </div>
+              <button onclick="resetCurrentAdminDocForm()" title="Khôi phục nội dung mặc định của mẫu" class="px-2.5 py-1 text-xs text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-lg border border-slate-200 transition flex items-center gap-1">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Mặc định</span>
+              </button>
+            </div>
+
+            <!-- Form Fields -->
+            <div class="space-y-3.5 text-xs max-h-[720px] overflow-y-auto pr-1">
+              
+              <!-- 1. Cơ quan chủ quản & ban hành -->
+              <div class="space-y-1.5">
+                <label class="block font-semibold text-slate-700">Tên cơ quan, tổ chức cấp trên (nếu có):</label>
+                <input type="text" id="adm-co-quan-chu-quan" oninput="updateAdminDocPreview()" placeholder="Vd: ỦY BAN NHÂN DÂN TỈNH..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase font-semibold text-slate-800">
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="block font-semibold text-slate-700">Tên cơ quan, tổ chức ban hành văn bản <span class="text-red-500">*</span>:</label>
+                <input type="text" id="adm-co-quan-ban-hanh" oninput="updateAdminDocPreview()" placeholder="Vd: VĂN PHÒNG UBND TỈNH..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase font-bold text-slate-900">
+              </div>
+
+              <!-- 2. Số ký hiệu & Địa danh ngày tháng -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1">
+                  <label class="block font-semibold text-slate-700">Số / Ký hiệu:</label>
+                  <input type="text" id="adm-so-ky-hieu" oninput="updateAdminDocPreview()" placeholder="128/VP-TH" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium">
+                </div>
+                <div class="space-y-1">
+                  <label class="block font-semibold text-slate-700">Địa danh ban hành:</label>
+                  <input type="text" id="adm-dia-danh" oninput="updateAdminDocPreview()" placeholder="Hà Nội" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium">
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="block font-semibold text-slate-700">Ngày tháng năm ban hành:</label>
+                <input type="text" id="adm-ngay-thang" oninput="updateAdminDocPreview()" placeholder="ngày 15 tháng 11 năm 2026" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium italic">
+              </div>
+
+              <!-- 3. Tên loại văn bản / Trích yếu nội dung -->
+              <div class="space-y-1.5">
+                <label class="block font-semibold text-slate-700">Tên loại văn bản & Trích yếu nội dung <span class="text-red-500">*</span>:</label>
+                <textarea id="adm-trich-yeu" rows="2" oninput="updateAdminDocPreview()" placeholder="V/v tăng cường công tác văn thư và chuyển đổi số năm 2026..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium resize-y"></textarea>
+              </div>
+
+              <!-- 4. Kính gửi (nếu có) -->
+              <div class="space-y-1.5">
+                <label class="block font-semibold text-slate-700">Kính gửi (hoặc Nơi gửi đến):</label>
+                <textarea id="adm-kinh-gui" rows="2" oninput="updateAdminDocPreview()" placeholder="Các Sở, ban, ngành thuộc tỉnh;..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium resize-y"></textarea>
+              </div>
+
+              <!-- 5. Nội dung văn bản -->
+              <div class="space-y-1.5">
+                <label class="block font-semibold text-slate-700">Nội dung chi tiết văn bản <span class="text-red-500">*</span>:</label>
+                <textarea id="adm-noi-dung" rows="10" oninput="updateAdminDocPreview()" placeholder="Nhập nội dung văn bản hành chính..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-normal text-slate-800 leading-relaxed resize-y font-mono text-xs"></textarea>
+              </div>
+
+              <!-- 6. Nơi nhận -->
+              <div class="space-y-1.5">
+                <label class="block font-semibold text-slate-700">Nơi nhận (mỗi dòng một nơi nhận):</label>
+                <textarea id="adm-noi-nhan" rows="3" oninput="updateAdminDocPreview()" placeholder="- Như kính gửi;\n- Lưu: VT." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono text-xs resize-y"></textarea>
+              </div>
+
+              <!-- 7. Chức vụ & Họ tên người ký -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1">
+                  <label class="block font-semibold text-slate-700">Chức vụ người ký:</label>
+                  <input type="text" id="adm-chuc-vu" oninput="updateAdminDocPreview()" placeholder="CHÁNH VĂN PHÒNG" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase font-bold text-slate-900">
+                </div>
+                <div class="space-y-1">
+                  <label class="block font-semibold text-slate-700">Họ và tên người ký:</label>
+                  <input type="text" id="adm-ho-ten" oninput="updateAdminDocPreview()" placeholder="Nguyễn Văn An" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold text-slate-900">
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Footer Action Buttons inside form -->
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button onclick="copyCurrentAdminDocText(this)" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition flex items-center gap-1.5">
+                <i class="fa-regular fa-copy"></i>
+                <span>Sao chép văn bản</span>
+              </button>
+              <button onclick="exportCurrentAdminDocx()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                <i class="fa-solid fa-file-word"></i>
+                <span>Tải Word (.docx)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CỘT PHẢI: XEM TRƯỚC TRỰC QUAN KHỔ GIẤY A4 (7 COLS) -->
+          <div class="lg:col-span-7 space-y-4">
+            
+            <!-- Toolbar trên của khung xem trước -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Xem trước Bản in A4 (Chuẩn Nghị định 30/2020)</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button onclick="printAdminDoc()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-print"></i>
+                  <span>In / PDF</span>
+                </button>
+                <button onclick="exportCurrentAdminDocx()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-1.5">
+                  <i class="fa-solid fa-download"></i>
+                  <span>Tải .DOCX</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- TỜ GIẤY A4 MÔ PHỎNG (A4 Paper Container) -->
+            <div class="bg-slate-200/80 p-4 md:p-8 rounded-2xl border border-slate-300 overflow-x-auto flex justify-center">
+              
+              <!-- Tờ giấy A4 chuẩn tỷ lệ với lề chuẩn NĐ 30 -->
+              <div id="admin-doc-a4-sheet" class="bg-white shadow-2xl rounded-sm w-full max-w-[760px] min-h-[1050px] p-[30px] md:p-[45px] text-slate-900 border border-slate-300 space-y-6" style="font-family: 'Times New Roman', Times, serif; font-size: 13.5pt; line-height: 1.35;">
+                
+                <!-- 1. BẢNG TIÊU NGỮ 2 Ô (HEADER 2 CELLS) -->
+                <div class="grid grid-cols-12 gap-2 text-center items-start">
+                  <!-- Ô trái: Tên cơ quan & Số hiệu -->
+                  <div class="col-span-5 space-y-1">
+                    <div id="prev-co-quan-chu-quan" class="text-[12pt] uppercase tracking-wide text-slate-800">ỦY BAN NHÂN DÂN TỈNH</div>
+                    <div id="prev-co-quan-ban-hanh" class="text-[12pt] font-bold uppercase tracking-wide text-slate-950">VĂN PHÒNG UBND TỈNH</div>
+                    <div class="flex justify-center my-0.5">
+                      <div class="w-24 border-b border-slate-900"></div>
+                    </div>
+                    <div id="prev-so-ky-hieu" class="text-[12pt] text-slate-800">Số: 128/VP-TH</div>
+                  </div>
+
+                  <!-- Ô phải: Quốc hiệu & Tiêu ngữ + Địa danh ngày tháng -->
+                  <div class="col-span-7 space-y-1">
+                    <div class="text-[12pt] font-bold uppercase tracking-wide text-slate-950">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                    <div class="text-[13pt] font-bold text-slate-950">Độc lập - Tự do - Hạnh phúc</div>
+                    <div class="flex justify-center my-0.5">
+                      <div class="w-36 border-b border-slate-900"></div>
+                    </div>
+                    <div id="prev-dia-danh-ngay" class="text-[13pt] italic text-slate-800">Hà Nội, ngày 15 tháng 11 năm 2026</div>
+                  </div>
+                </div>
+
+                <!-- 2. TRÍCH YẾU / TIÊU ĐỀ VĂN BẢN -->
+                <div id="prev-title-container" class="space-y-2 pt-2">
+                  <!-- Rendered depending on official_letter vs decision/plan/etc. -->
+                </div>
+
+                <!-- 3. KÍNH GỬI -->
+                <div id="prev-kinh-gui-container" class="space-y-1">
+                  <!-- Rendered if kinh_gui exists -->
+                </div>
+
+                <!-- 4. NỘI DUNG VĂN BẢN (Justified text, first line indent 1cm) -->
+                <div id="prev-noi-dung" class="text-justify whitespace-pre-wrap leading-relaxed space-y-3" style="text-indent: 1cm;">
+                  <!-- Rendered paragraphs -->
+                </div>
+
+                <!-- 5. BẢNG CHÂN TRANG 2 Ô (FOOTER: NƠI NHẬN VS KÝ TÊN) -->
+                <div class="grid grid-cols-12 gap-4 pt-6 items-start">
+                  
+                  <!-- Ô Trái: Nơi nhận (11-12pt nghiêng) -->
+                  <div class="col-span-5 text-left text-[11pt] space-y-1">
+                    <div class="font-bold italic text-slate-900">Nơi nhận:</div>
+                    <div id="prev-noi-nhan" class="text-slate-800 whitespace-pre-line pl-1 leading-snug">
+                      - Như kính gửi;<br>- Chủ tịch, các PCT UBND tỉnh;<br>- Lưu: VT, TH.
+                    </div>
+                  </div>
+
+                  <!-- Ô Phải: Chức vụ, chữ ký, họ tên (13-14pt in hoa đậm) -->
+                  <div class="col-span-7 text-center space-y-1">
+                    <div id="prev-chuc-vu" class="text-[13pt] font-bold uppercase text-slate-950">CHÁNH VĂN PHÒNG</div>
+                    <div class="h-20 flex items-center justify-center text-slate-300 italic text-xs select-none">
+                      (Chữ ký điện tử / đóng dấu)
+                    </div>
+                    <div id="prev-ho-ten" class="text-[13pt] font-bold uppercase text-slate-950">Nguyễn Văn An</div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
   </main>
 
   <!-- MODAL DUYỆT THƯ MỤC TRỰC QUAN TRÊN MÁY TÍNH -->
@@ -707,6 +960,7 @@
         'catalog': 'Lập danh mục hồ sơ lưu trữ (Mẫu số 03)',
         'voice': 'AI Voice Studio (Microsoft Edge TTS)',
         'ocr': 'Quét & Nhận dạng Văn bản OCR (In sẵn -> File Word)',
+        'admin-doc': 'Soạn thảo & Xử lý Văn bản Hành chính (Nghị định 30/2020/NĐ-CP)',
         'kpi': 'Hệ thống Quản lý & Đánh giá KPI Cán bộ'
       };
       if (titles[tabId]) {
@@ -717,6 +971,7 @@
       if (tabId === 'catalog' && catalogRows.length === 0) loadInitialCatalog();
       if (tabId === 'kpi') loadKpiData();
       if (tabId === 'ocr') checkOcrStatus();
+      if (tabId === 'admin-doc' && adminTemplates.length === 0) loadAdminTemplates();
     }
 
     // TRÌNH DUYỆT THƯ MỤC TRỰC QUAN & HỘP THOẠI WINDOWS
@@ -1314,7 +1569,7 @@
     }
 
     function openAddTaskModal() {
-      const officer = prompt("Nhập ID cán bộ (1: Nguyễn Tiến Hùng, 2: Lê Văn Nam, 3: Trần Thị Mai):", "1");
+      const officer = prompt("Nhập ID cán bộ (1: Nguyễn Văn An, 2: Lê Văn Nam, 3: Trần Thị Mai):", "1");
       if (!officer) return;
       const task = prompt("Nhập ID nhiệm vụ (1-5):", "1");
       if (!task) return;
@@ -1660,7 +1915,278 @@
       window.print();
     }
 
-    // Tự động tải danh sách ổ đĩa và danh sách file đã quét ban đầu khi mở app
+    
+    // ==========================================
+    // LOGIC SOẠN THẢO VĂN BẢN HÀNH CHÍNH (NĐ 30/2020)
+    // ==========================================
+    let adminTemplates = [];
+    let currentAdminTemplateId = 'official_letter';
+    let currentAdminCategory = 'ALL';
+
+    async function loadAdminTemplates() {
+      try {
+        const res = await fetch('/api/admin-doc/templates');
+        if (!res.ok) throw new Error('Không thể tải biểu mẫu văn bản');
+        adminTemplates = await res.json();
+        renderAdminCategories();
+        renderAdminTemplates();
+        selectAdminTemplate(currentAdminTemplateId);
+      } catch (err) {
+        console.error('Lỗi loadAdminTemplates:', err);
+      }
+    }
+
+    function renderAdminCategories() {
+      const cats = ['ALL', ...new Set(adminTemplates.map(t => t.category))];
+      const container = document.getElementById('admin-doc-cats');
+      if (!container) return;
+      container.innerHTML = cats.map(cat => {
+        const isActive = cat === currentAdminCategory;
+        const label = cat === 'ALL' ? 'Tất cả (9)' : cat;
+        return `
+          <button onclick="filterAdminCategory('${cat}')" class="px-3 py-1 rounded-xl font-semibold transition ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            ${label}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function filterAdminCategory(cat) {
+      currentAdminCategory = cat;
+      renderAdminCategories();
+      renderAdminTemplates();
+    }
+
+    function renderAdminTemplates() {
+      const container = document.getElementById('admin-doc-templates-grid');
+      if (!container) return;
+      const filtered = currentAdminCategory === 'ALL' 
+        ? adminTemplates 
+        : adminTemplates.filter(t => t.category === currentAdminCategory);
+
+      container.innerHTML = filtered.map(t => {
+        const isSelected = t.id === currentAdminTemplateId;
+        return `
+          <div onclick="selectAdminTemplate('${t.id}')" class="cursor-pointer p-4 rounded-xl border transition ${isSelected ? 'bg-blue-50/80 border-blue-500 shadow-sm ring-1 ring-blue-500' : 'bg-slate-50/70 border-slate-200 hover:border-slate-300 hover:bg-white'} space-y-1.5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold ${isSelected ? 'text-blue-700' : 'text-slate-800'}">${t.name}</span>
+                ${isSelected ? '<span class="text-[10px] bg-blue-600 text-white font-bold px-2 py-0.5 rounded-full">Đang chọn</span>' : ''}
+              </div>
+              <p class="text-[11px] text-amber-700 font-medium">${t.decree_ref}</p>
+              <p class="text-[11px] text-slate-500 line-clamp-2 mt-1">${t.description}</p>
+            </div>
+            <div class="pt-1.5 flex items-center justify-between text-[11px] text-slate-400">
+              <span class="px-2 py-0.5 rounded bg-slate-200/60 text-slate-600">${t.category}</span>
+              <span class="font-medium text-blue-600 flex items-center gap-1">Chọn mẫu <i class="fa-solid fa-arrow-right text-[10px]"></i></span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectAdminTemplate(id) {
+      currentAdminTemplateId = id;
+      renderAdminTemplates();
+      const tmpl = adminTemplates.find(t => t.id === id);
+      if (!tmpl) return;
+
+      document.getElementById('adm-selected-ref').innerText = tmpl.decree_ref;
+
+      const f = tmpl.default_fields || {};
+      document.getElementById('adm-co-quan-chu-quan').value = f.co_quan_chu_quan || '';
+      document.getElementById('adm-co-quan-ban-hanh').value = f.co_quan_ban_hanh || '';
+      document.getElementById('adm-so-ky-hieu').value = f.so_ky_hieu || '';
+      document.getElementById('adm-dia-danh').value = f.dia_danh || '';
+      document.getElementById('adm-ngay-thang').value = f.ngay_thang || '';
+      document.getElementById('adm-trich-yeu').value = f.trich_yeu || '';
+      document.getElementById('adm-kinh-gui').value = f.kinh_gui || '';
+      document.getElementById('adm-noi-dung').value = f.noi_dung || '';
+      document.getElementById('adm-noi-nhan').value = f.noi_nhan || '';
+      document.getElementById('adm-chuc-vu').value = f.chuc_vu_nguoi_ky || '';
+      document.getElementById('adm-ho-ten').value = f.ho_ten_nguoi_ky || '';
+
+      updateAdminDocPreview();
+    }
+
+    function resetCurrentAdminDocForm() {
+      selectAdminTemplate(currentAdminTemplateId);
+    }
+
+    function updateAdminDocPreview() {
+      const chuQuan = document.getElementById('adm-co-quan-chu-quan').value.trim();
+      const banHanh = document.getElementById('adm-co-quan-ban-hanh').value.trim();
+      const soKyHieu = document.getElementById('adm-so-ky-hieu').value.trim();
+      const diaDanh = document.getElementById('adm-dia-danh').value.trim();
+      const ngayThang = document.getElementById('adm-ngay-thang').value.trim();
+      const trichYeu = document.getElementById('adm-trich-yeu').value.trim();
+      const kinhGui = document.getElementById('adm-kinh-gui').value.trim();
+      const noiDung = document.getElementById('adm-noi-dung').value;
+      const noiNhan = document.getElementById('adm-noi-nhan').value.trim();
+      const chucVu = document.getElementById('adm-chuc-vu').value.trim();
+      const hoTen = document.getElementById('adm-ho-ten').value.trim();
+
+      // Header Preview
+      const elChuQuan = document.getElementById('prev-co-quan-chu-quan');
+      if (chuQuan) {
+        elChuQuan.innerText = chuQuan;
+        elChuQuan.style.display = 'block';
+      } else {
+        elChuQuan.style.display = 'none';
+      }
+
+      document.getElementById('prev-co-quan-ban-hanh').innerText = banHanh || 'TÊN CƠ QUAN BAN HÀNH';
+      document.getElementById('prev-so-ky-hieu').innerText = soKyHieu ? 'Số: ' + soKyHieu : 'Số: .../...';
+      
+      const diaDanhNgay = (diaDanh && ngayThang) 
+        ? `${diaDanh}, ${ngayThang}`
+        : (diaDanh ? diaDanh : ngayThang);
+      document.getElementById('prev-dia-danh-ngay').innerText = diaDanhNgay || '..., ngày ... tháng ... năm ...';
+
+      // Title & Trich Yeu Preview
+      const titleBox = document.getElementById('prev-title-container');
+      if (currentAdminTemplateId === 'official_letter') {
+        titleBox.innerHTML = `
+          <div class="text-left italic text-[12pt] text-slate-800 pl-4 border-l-2 border-slate-300">
+            ${trichYeu || 'V/v ...'}
+          </div>
+        `;
+      } else {
+        const lines = trichYeu.split('\n');
+        titleBox.innerHTML = lines.map((l, idx) => `
+          <div class="text-center font-bold text-slate-950 ${idx === 0 ? 'text-[15pt] uppercase tracking-wide' : 'text-[13pt]'}">
+            ${l.trim()}
+          </div>
+        `).join('');
+      }
+
+      // Kinh Gui Preview
+      const kgBox = document.getElementById('prev-kinh-gui-container');
+      if (kinhGui) {
+        kgBox.innerHTML = `
+          <div class="text-center font-bold text-[13.5pt] text-slate-900 pt-2 pb-1">
+            Kính gửi: <span class="font-normal">${kinhGui.replace(/\n/g, '<br>')}</span>
+          </div>
+        `;
+        kgBox.style.display = 'block';
+      } else {
+        kgBox.style.display = 'none';
+      }
+
+      // Noi Dung Preview (Formatted Paragraphs)
+      const prevNoiDung = document.getElementById('prev-noi-dung');
+      if (noiDung) {
+        const paragraphs = noiDung.split(/\n\n+/);
+        prevNoiDung.innerHTML = paragraphs.map(p => {
+          const trimmed = p.trim();
+          if (!trimmed) return '';
+          // If paragraph is a heading or "QUYẾT ĐỊNH:" / "KẾ HOẠCH"
+          if (trimmed.startsWith('QUYẾT ĐỊNH:') || trimmed.startsWith('Điều ') || trimmed.startsWith('Mục ')) {
+            return `<p class="font-bold text-slate-950" style="text-indent: 0;">${trimmed.replace(/\n/g, '<br>')}</p>`;
+          }
+          return `<p class="leading-relaxed" style="text-indent: 1cm;">${trimmed.replace(/\n/g, '<br>')}</p>`;
+        }).join('');
+      } else {
+        prevNoiDung.innerHTML = '<p class="text-slate-400 italic text-center">[Nhập nội dung văn bản ở cột bên trái]</p>';
+      }
+
+      // Footer: Noi Nhan & Ky Ten
+      document.getElementById('prev-noi-nhan').innerHTML = noiNhan 
+        ? noiNhan.replace(/\n/g, '<br>') 
+        : '- Như kính gửi;<br>- Lưu: VT.';
+      document.getElementById('prev-chuc-vu').innerText = chucVu || 'CHỨC VỤ';
+      document.getElementById('prev-ho-ten').innerText = hoTen || 'HỌ VÀ TÊN';
+    }
+
+    async function exportCurrentAdminDocx() {
+      const tmpl = adminTemplates.find(t => t.id === currentAdminTemplateId);
+      const templateName = tmpl ? tmpl.name : 'VanBan';
+      const soKyHieu = document.getElementById('adm-so-ky-hieu').value.trim();
+
+      const fields = {
+        co_quan_chu_quan: document.getElementById('adm-co-quan-chu-quan').value.trim(),
+        co_quan_ban_hanh: document.getElementById('adm-co-quan-ban-hanh').value.trim(),
+        so_ky_hieu: soKyHieu,
+        dia_danh: document.getElementById('adm-dia-danh').value.trim(),
+        ngay_thang: document.getElementById('adm-ngay-thang').value.trim(),
+        trich_yeu: document.getElementById('adm-trich-yeu').value.trim(),
+        kinh_gui: document.getElementById('adm-kinh-gui').value.trim(),
+        noi_dung: document.getElementById('adm-noi-dung').value,
+        noi_nhan: document.getElementById('adm-noi-nhan').value.trim(),
+        chuc_vu_nguoi_ky: document.getElementById('adm-chuc-vu').value.trim(),
+        ho_ten_nguoi_ky: document.getElementById('adm-ho-ten').value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/admin-doc/export-docx', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template_id: currentAdminTemplateId,
+            fields: fields
+          })
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || 'Lỗi xuất file Word');
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const cleanSo = soKyHieu ? soKyHieu.replace(/[^a-zA-Z0-9_-]/g, '_') : 'ND30';
+        a.download = `${templateName}_${cleanSo}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Lỗi xuất văn bản hành chính: ' + err.message);
+      }
+    }
+
+    function copyCurrentAdminDocText(btn) {
+      const chuQuan = document.getElementById('adm-co-quan-chu-quan').value.trim();
+      const banHanh = document.getElementById('adm-co-quan-ban-hanh').value.trim();
+      const soKyHieu = document.getElementById('adm-so-ky-hieu').value.trim();
+      const diaDanh = document.getElementById('adm-dia-danh').value.trim();
+      const ngayThang = document.getElementById('adm-ngay-thang').value.trim();
+      const trichYeu = document.getElementById('adm-trich-yeu').value.trim();
+      const kinhGui = document.getElementById('adm-kinh-gui').value.trim();
+      const noiDung = document.getElementById('adm-noi-dung').value;
+      const noiNhan = document.getElementById('adm-noi-nhan').value.trim();
+      const chucVu = document.getElementById('adm-chuc-vu').value.trim();
+      const hoTen = document.getElementById('adm-ho-ten').value.trim();
+
+      const text = [
+        chuQuan ? chuQuan : '',
+        banHanh,
+        'Số: ' + soKyHieu + '          CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM',
+        '                      Độc lập - Tự do - Hạnh phúc',
+        '                      ' + diaDanh + ', ' + ngayThang,
+        '',
+        trichYeu,
+        kinhGui ? ('Kính gửi: ' + kinhGui) : '',
+        '',
+        noiDung,
+        '',
+        'Nơi nhận:                     ' + chucVu,
+        noiNhan + '                   ' + hoTen
+      ].filter(l => l !== undefined).join('\n');
+
+      navigator.clipboard.writeText(text).then(() => {
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i><span class="text-emerald-600">Đã chép!</span>';
+        setTimeout(() => { btn.innerHTML = oldHtml; }, 1600);
+      });
+    }
+
+    function printAdminDoc() {
+      window.print();
+    }
+// Tự động tải danh sách ổ đĩa và danh sách file đã quét ban đầu khi mở app
     loadDrives();
     loadScannedFiles();
   </script>

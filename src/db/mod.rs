@@ -122,7 +122,7 @@ pub fn init_db<P: AsRef<Path>>(path: P) -> Result<Connection> {
     if officer_count == 0 {
         conn.execute(
             "INSERT INTO officers (ho_ten, cap_bac, chuc_vu, linh_vuc_phu_trach) VALUES 
-             ('Nguyễn Tiến Hùng', 'Trung tá', 'Chỉ huy / Quản trị hệ thống', 'Quản trị điều hành chung'),
+             ('Nguyễn Văn An', 'Trung tá', 'Chỉ huy / Quản trị hệ thống', 'Quản trị điều hành chung'),
              ('Lê Văn Nam', 'Đại úy', 'Cán bộ thanh tra', 'Thanh tra hành chính và giải quyết khiếu nại'),
              ('Trần Thị Mai', 'Thượng úy', 'Cán bộ tổng hợp', 'Công tác hồ sơ, tài liệu và văn thư')",
             [],

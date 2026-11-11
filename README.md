@@ -81,6 +81,28 @@ CYA SUITE tích hợp giao diện hiện đại, tối giản và thanh lịch, 
   - 📄 **Tải file văn bản thuần (.txt)**.
   - 🖨️ **In & Xuất PDF trực tiếp**.
 
+### 🏛️ 6. Soạn thảo & Biểu mẫu Văn bản Hành chính (Nghị định 30/2020/NĐ-CP)
+* **Tích hợp sẵn 9 Biểu mẫu Hành chính Chuẩn Nhà nước (Phụ lục III NĐ 30/2020/NĐ-CP):**
+  1. *Công văn Hành chính* (Mẫu số 01.1)
+  2. *Quyết định cá biệt / trực tiếp* (Mẫu số 01.2)
+  3. *Tờ trình phê duyệt* (Mẫu số 01.5)
+  4. *Kế hoạch công tác* (Mẫu số 01.4)
+  5. *Báo cáo định kỳ / tổng kết* (Mẫu số 01.6)
+  6. *Thông báo kết luận / chỉ đạo* (Mẫu số 01.7)
+  7. *Biên bản làm việc / cuộc họp* (Mẫu số 01.10)
+  8. *Giấy mời họp / hội nghị* (Mẫu số 01.12)
+  9. *Giấy giới thiệu công tác* (Mẫu số 01.13)
+* **Quy chuẩn Thể thức & Căn lề Khổ A4 chính xác tuyệt đối:**
+  - Lề trên: 20 mm (1134 dxa)
+  - Lề dưới: 20 mm (1134 dxa)
+  - Lề trái: 30 mm (1701 dxa)
+  - Lề phải: 15 mm (850 dxa)
+  - Bảng tiêu ngữ đầu trang 2 ô không viền: Tên cơ quan & Số hiệu bên trái; Quốc hiệu, Tiêu ngữ & Địa danh ngày tháng bên phải.
+  - Bảng chân trang 2 ô không viền: Nơi nhận (chữ nghiêng 11-12pt) bên trái; Quyền hạn, chức vụ, vùng chữ ký số và họ tên người ký (chữ in hoa đậm 13-14pt) bên phải.
+  - Phông chữ tiêu chuẩn Times New Roman, cỡ chữ 13-14pt, giãn dòng 1.15 và thụt đầu dòng 1cm.
+* **Giao diện làm việc 2 cột thông minh:** Nhập liệu biểu mẫu bên trái, bản xem trước A4 mô phỏng tờ giấy in thật bên phải cập nhật tức thì theo thời gian thực.
+* **Xuất bản đa dạng:** Tải trực tiếp file Microsoft Word `.docx` chuẩn thể thức hoặc in / xuất PDF ngay trên trình duyệt.
+
 ---
 
 ## 💻 4. Hướng Dẫn Cài Đặt & Sử Dụng
